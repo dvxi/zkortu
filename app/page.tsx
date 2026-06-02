@@ -205,7 +205,7 @@ export default function HomePage() {
                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
                   {/* Large featured */}
                   <Link
-                    href="/aktualnosci"
+                    href={`/aktualnosci/${featured.id}`}
                     className="sm:col-span-3 group block rounded-xl overflow-hidden relative"
                   >
                     <div className="aspect-[16/10] relative overflow-hidden">
@@ -247,7 +247,7 @@ export default function HomePage() {
                     {sideNews.slice(0, 3).map((article, i) => (
                       <Link
                         key={article.id}
-                        href="/aktualnosci"
+                        href={`/aktualnosci/${article.id}`}
                         className="group flex gap-3 p-3 rounded-lg hover:bg-muted transition-colors"
                       >
                         <div className="relative w-20 h-16 rounded overflow-hidden flex-shrink-0">

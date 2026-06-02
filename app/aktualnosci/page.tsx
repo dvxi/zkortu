@@ -2,6 +2,7 @@
 
 import { useState } from "react";
 import Image from "next/image";
+import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
@@ -147,9 +148,10 @@ export default function AktualnosciPage() {
               </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
                 {grouped[date].map((article, idx) => (
-                  <article
+                  <Link
                     key={article.id}
-                    className="group cursor-pointer rounded-xl overflow-hidden border border-border/60 hover:border-border transition-all hover:-translate-y-1 bg-card"
+                    href={`/aktualnosci/${article.id}`}
+                    className="group block rounded-xl overflow-hidden border border-border/60 hover:border-border transition-all hover:-translate-y-1 bg-card"
                     style={{ transitionDuration: "200ms" }}
                   >
                     <div className="relative h-48 overflow-hidden">
@@ -186,7 +188,7 @@ export default function AktualnosciPage() {
                         </span>
                       </div>
                     </div>
-                  </article>
+                  </Link>
                 ))}
               </div>
             </section>
