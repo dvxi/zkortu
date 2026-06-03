@@ -590,7 +590,8 @@ export default function KalendarzPage() {
                 </SheetTitle>
               </SheetHeader>
 
-              <div className="relative h-48 rounded-xl overflow-hidden mb-6">
+              <div className="px-4 pb-6 space-y-6">
+              <div className="relative h-48 rounded-xl overflow-hidden">
                 <Image
                   src={`https://picsum.photos/seed/${picsumSeedMap[selectedTournament.id] ?? "tennis-tour-t1"}/700/400`}
                   alt={selectedTournament.name}
@@ -599,7 +600,7 @@ export default function KalendarzPage() {
                 />
               </div>
 
-              <div className="grid grid-cols-2 gap-3 mb-6">
+              <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg bg-muted/50 border border-border">
                   <p className="text-xs text-muted-foreground mb-1">Powierzchnia</p>
                   <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${surfaceColors[selectedTournament.surface]}`}>
@@ -631,7 +632,7 @@ export default function KalendarzPage() {
               </div>
 
               {mockDrawResults[selectedTournament.id] && (
-                <div className="mb-6">
+                <div>
                   <h3 className="font-bold text-sm mb-3">Aktualne wyniki drabinki</h3>
                   <div className="space-y-2">
                     {mockDrawResults[selectedTournament.id].map((result, i) => (
@@ -657,6 +658,7 @@ export default function KalendarzPage() {
                   <ExternalLink className="h-3.5 w-3.5" />
                 </a>
               )}
+              </div>{/* end px-4 wrapper */}
             </>
           )}
         </SheetContent>
