@@ -50,7 +50,7 @@ interface RankingTableProps {
 
 function RankingTable({ players, variant }: RankingTableProps) {
   const liveOffset = variant === "live"
-    ? players.map((p, i) => ({ ...p, points: p.points + Math.floor(Math.random() * 200 - 50) }))
+    ? players.map((p) => ({ ...p, points: p.points + ((p.points * 7 + 13) % 200) - 50 }))
     : players;
 
   const racePoints = variant === "race"

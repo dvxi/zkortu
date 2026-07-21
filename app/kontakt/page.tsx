@@ -92,13 +92,29 @@ export default function KontaktPage() {
     return e;
   }
 
-  function handleSubmit(e: React.FormEvent) {
+  async function handleSubmit(e: React.FormEvent) {
     e.preventDefault();
     const errs = validate();
     if (Object.keys(errs).length) { setErrors(errs); return; }
     setErrors({});
     setLoading(true);
-    setTimeout(() => { setLoading(false); setSubmitted(true); }, 1200);
+    try {
+      const res = await fetch("/api/contact", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify(form),
+      });
+      if (!res.ok) {
+        const data = await res.json().catch(() => ({}));
+        setErrors({ message: data.error || "Nie udało się wysłać wiadomości. Spróbuj ponownie." });
+        return;
+      }
+      setSubmitted(true);
+    } catch {
+      setErrors({ message: "Błąd sieci. Sprawdź połączenie i spróbuj ponownie." });
+    } finally {
+      setLoading(false);
+    }
   }
 
   const msgLen = form.message.length;
