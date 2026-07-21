@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -14,6 +14,16 @@ import {
   Flag,
 } from "lucide-react";
 import { atpPlayers, wtaPlayers, type Player } from "@/lib/mock-data";
+
+async function loadRankings(type: "ATP" | "WTA"): Promise<Player[]> {
+  try {
+    const res = await fetch(`/api/rankings?type=${type}`);
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
 
 function PointsDiff({ diff }: { diff: number }) {
   if (diff > 0)
@@ -142,8 +152,15 @@ const rankingTypes = [
 export default function RankingPage() {
   const [tour, setTour] = useState<"atp" | "wta">("atp");
   const [rankType, setRankType] = useState<"main" | "live" | "race">("main");
+  const [atpData, setAtpData] = useState<Player[]>(atpPlayers);
+  const [wtaData, setWtaData] = useState<Player[]>(wtaPlayers);
 
-  const players = tour === "atp" ? atpPlayers : wtaPlayers;
+  useEffect(() => {
+    loadRankings("ATP").then(d => { if (d.length) setAtpData(d); });
+    loadRankings("WTA").then(d => { if (d.length) setWtaData(d); });
+  }, []);
+
+  const players = tour === "atp" ? atpData : wtaData;
   const currentType = rankingTypes.find((r) => r.id === rankType)!;
   const Icon = currentType.icon;
 

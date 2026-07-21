@@ -8,7 +8,7 @@ import {
   Clock,
   Circle,
 } from "lucide-react";
-import { liveMatches, surfaceColors, type LiveMatch } from "@/lib/mock-data";
+import { liveMatches as mockMatches, surfaceColors, type LiveMatch } from "@/lib/mock-data";
 
 function MatchStatusBadge({ status }: { status: LiveMatch["status"] }) {
   if (status === "live")
@@ -64,22 +64,42 @@ function StatBar({ label, v1, v2 }: { label: string; v1: number; v2: number }) {
   );
 }
 
+async function loadLiveScores(): Promise<LiveMatch[]> {
+  try {
+    const res = await fetch("/api/livescores");
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
+
 export default function WynikiLivePage() {
-  const [selected, setSelected] = useState<string>(liveMatches[0].id);
+  const [matches, setMatches] = useState<LiveMatch[]>(mockMatches);
+  const [selected, setSelected] = useState<string>(mockMatches[0].id);
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [refreshing, setRefreshing] = useState(false);
 
-  const match = liveMatches.find((m) => m.id === selected) ?? liveMatches[0];
+  const match = matches.find((m) => m.id === selected) ?? matches[0];
 
-  function handleRefresh() {
+  async function handleRefresh() {
     setRefreshing(true);
-    setTimeout(() => {
-      setLastUpdated(new Date());
-      setRefreshing(false);
-    }, 800);
+    const fresh = await loadLiveScores();
+    if (fresh.length) {
+      setMatches(fresh);
+      setSelected(s => fresh.find(m => m.id === s) ? s : fresh[0].id);
+    }
+    setLastUpdated(new Date());
+    setRefreshing(false);
   }
 
   useEffect(() => {
+    loadLiveScores().then(d => {
+      if (d.length) {
+        setMatches(d);
+        setSelected(d[0].id);
+      }
+    });
     const interval = setInterval(() => setLastUpdated(new Date()), 60000);
     return () => clearInterval(interval);
   }, []);
@@ -110,7 +130,7 @@ export default function WynikiLivePage() {
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── Sidebar: match list ── */}
         <div className="lg:col-span-1 space-y-2">
-          {liveMatches.map((m) => (
+          {matches.map((m) => (
             <button
               key={m.id}
               onClick={() => setSelected(m.id)}

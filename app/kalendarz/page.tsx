@@ -1,6 +1,6 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import {
@@ -24,7 +24,7 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import {
-  tournaments,
+  tournaments as mockTournaments,
   todayMatches,
   surfaceColors,
   categoryColors,
@@ -69,8 +69,8 @@ function isoDate(year: number, month: number, day: number) {
   return `${year}-${String(month + 1).padStart(2, "0")}-${String(day).padStart(2, "0")}`;
 }
 
-function getTournamentsForDay(dateStr: string): Tournament[] {
-  return tournaments.filter(
+function getTournamentsForDay(dateStr: string, all: Tournament[]): Tournament[] {
+  return all.filter(
     (t) => dateStr >= t.startDate && dateStr <= t.endDate
   );
 }
@@ -147,14 +147,29 @@ function TournamentListItem({
   );
 }
 
+async function loadCalendar(): Promise<Tournament[]> {
+  try {
+    const res = await fetch("/api/calendar");
+    if (!res.ok) return [];
+    return res.json();
+  } catch {
+    return [];
+  }
+}
+
 export default function KalendarzPage() {
   const TODAY = "2026-06-02";
+  const [tournaments, setTournaments] = useState<Tournament[]>(mockTournaments);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [filter, setFilter] = useState<"all" | "live" | "upcoming" | "completed">("all");
   const [view, setView] = useState<"list" | "calendar">("calendar");
   const [calYear, setCalYear] = useState(2026);
   const [calMonth, setCalMonth] = useState(5); // 0-indexed, 5 = June
   const [selectedDay, setSelectedDay] = useState<string>(TODAY);
+
+  useEffect(() => {
+    loadCalendar().then(d => { if (d.length) setTournaments(d); });
+  }, []);
 
   // ── Calendar grid data ──────────────────────────────────────────────────────
   const firstDayOfMonth = new Date(calYear, calMonth, 1);
@@ -184,7 +199,7 @@ export default function KalendarzPage() {
     .filter((t) => filter === "all" || t.status === filter)
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
 
-  const grouped = filteredList.reduce<Record<string, typeof tournaments>>((acc, t) => {
+  const grouped = filteredList.reduce<Record<string, Tournament[]>>((acc, t) => {
     const month = new Date(t.startDate).toLocaleDateString("pl-PL", { month: "long", year: "numeric" });
     if (!acc[month]) acc[month] = [];
     acc[month].push(t);
@@ -192,7 +207,7 @@ export default function KalendarzPage() {
   }, {});
 
   // ── Right panel: selected day events ───────────────────────────────────────
-  const dayTournaments = getTournamentsForDay(selectedDay);
+  const dayTournaments = getTournamentsForDay(selectedDay, tournaments);
   const dayMatches = todayMatches.filter(() => selectedDay === TODAY);
 
   const selectedDate = new Date(selectedDay + "T12:00:00");
@@ -273,7 +288,7 @@ export default function KalendarzPage() {
                     return <div key={`empty-${idx}`} className="bg-muted/20 min-h-[90px]" />;
                   }
                   const dateStr = isoDate(calYear, calMonth, day);
-                  const dayTours = getTournamentsForDay(dateStr);
+                  const dayTours = getTournamentsForDay(dateStr, tournaments);
                   const startingTours = tournaments.filter((t) => t.startDate === dateStr);
                   const isToday = dateStr === TODAY;
                   const isSelected = dateStr === selectedDay;
