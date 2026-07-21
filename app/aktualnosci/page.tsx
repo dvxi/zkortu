@@ -1,13 +1,13 @@
 "use client";
 
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import Image from "next/image";
 import Link from "next/link";
 import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Search, User } from "lucide-react";
-import { newsArticles } from "@/lib/mock-data";
+import { newsArticles as mockArticles, type NewsArticle } from "@/lib/mock-data";
 
 const categories = ["Wszystkie", "ATP", "WTA", "Roland Garros", "Wimbledon", "Transfer", "Polska", "Juniorzy"];
 
@@ -36,6 +36,14 @@ export default function AktualnosciPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Wszystkie");
   const [tab, setTab] = useState("wszystkie");
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>(mockArticles);
+
+  useEffect(() => {
+    fetch("/api/articles")
+      .then((r) => r.ok ? r.json() : null)
+      .then((d: NewsArticle[] | null) => { if (d?.length) setNewsArticles(d); })
+      .catch(() => {});
+  }, []);
 
   const filtered = newsArticles.filter((a) => {
     const matchesCategory = category === "Wszystkie" || a.category === category;

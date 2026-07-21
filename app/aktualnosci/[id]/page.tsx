@@ -2,19 +2,29 @@ import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
 import { newsArticles, type ContentBlock } from "@/lib/mock-data";
+import { getAllArticleSlugs, getArticleBySlug } from "@/lib/sanity";
 import { ArrowLeft, Clock, User, Calendar } from "lucide-react";
 import ReadingProgress from "./ReadingProgress";
 import ClientShare from "./ClientShare";
 
+async function getArticle(id: string) {
+  const fromSanity = await getArticleBySlug(id);
+  if (fromSanity) return fromSanity;
+  return newsArticles.find((a) => a.id === id) ?? null;
+}
+
 // ── Static params ─────────────────────────────────────────────────────────────
-export function generateStaticParams() {
-  return newsArticles.map((a) => ({ id: a.id }));
+export async function generateStaticParams() {
+  const sanityIds = await getAllArticleSlugs();
+  const mockIds = newsArticles.map((a) => a.id);
+  const all = Array.from(new Set([...sanityIds, ...mockIds]));
+  return all.map((id) => ({ id }));
 }
 
 // ── Metadata ──────────────────────────────────────────────────────────────────
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const article = newsArticles.find((a) => a.id === id);
+  const article = await getArticle(id);
   if (!article) return {};
   return {
     title: `${article.title} — zkortu.pl`,
@@ -93,7 +103,7 @@ function Block({ block }: { block: ContentBlock }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default async function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const article = newsArticles.find((a) => a.id === id);
+  const article = await getArticle(id);
   if (!article) notFound();
 
   const related = newsArticles
