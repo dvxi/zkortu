@@ -146,12 +146,15 @@ const rankingTypes = [
   },
 ];
 
+const PAGE_SIZE = 100;
+
 export default function RankingPage() {
   const [tour, setTour] = useState<"atp" | "wta">("atp");
   const [rankType, setRankType] = useState<"main" | "live" | "race">("main");
   const [atpData, setAtpData] = useState<Player[]>([]);
   const [wtaData, setWtaData] = useState<Player[]>([]);
   const [loading, setLoading] = useState(true);
+  const [page, setPage] = useState(1);
 
   useEffect(() => {
     Promise.all([loadRankings("ATP"), loadRankings("WTA")]).then(([atp, wta]) => {
@@ -161,9 +164,15 @@ export default function RankingPage() {
     });
   }, []);
 
-  const players = tour === "atp" ? atpData : wtaData;
+  const allPlayers = tour === "atp" ? atpData : wtaData;
   const currentType = rankingTypes.find((r) => r.id === rankType)!;
   const Icon = currentType.icon;
+
+  const totalPages = Math.max(1, Math.ceil(allPlayers.length / PAGE_SIZE));
+  const players = allPlayers.slice((page - 1) * PAGE_SIZE, page * PAGE_SIZE);
+
+  function changeTour(t: "atp" | "wta") { setTour(t); setPage(1); }
+  function changeRankType(r: "main" | "live" | "race") { setRankType(r); setPage(1); }
 
   return (
     <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
@@ -180,7 +189,7 @@ export default function RankingPage() {
         {(["atp", "wta"] as const).map((t) => (
           <button
             key={t}
-            onClick={() => setTour(t)}
+            onClick={() => changeTour(t)}
             className={`px-6 py-2.5 rounded-lg font-bold text-sm transition-colors uppercase tracking-wide ${
               tour === t ? "text-white" : "border border-border text-muted-foreground hover:text-foreground"
             }`}
@@ -198,7 +207,7 @@ export default function RankingPage() {
           return (
             <button
               key={rt.id}
-              onClick={() => setRankType(rt.id as "main" | "live" | "race")}
+              onClick={() => changeRankType(rt.id as "main" | "live" | "race")}
               className={`flex items-center gap-2 px-4 py-2 rounded-lg text-sm font-semibold border transition-colors ${
                 rankType === rt.id
                   ? "text-white border-transparent"
@@ -256,6 +265,32 @@ export default function RankingPage() {
           <RankingTable players={players} variant={rankType} />
         )}
       </div>
+
+      {/* Pagination */}
+      {!loading && totalPages > 1 && (
+        <div className="flex items-center justify-between mt-4 gap-3">
+          <button
+            onClick={() => { setPage((p) => Math.max(1, p - 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            disabled={page === 1}
+            className="px-4 py-2 rounded-lg border border-border text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted transition-colors"
+          >
+            ← Poprzednia
+          </button>
+          <span className="text-sm text-muted-foreground">
+            Strona <span className="font-bold text-foreground">{page}</span> z <span className="font-bold text-foreground">{totalPages}</span>
+            <span className="hidden sm:inline ml-2 text-xs">
+              (miejsca {(page - 1) * PAGE_SIZE + 1}–{Math.min(page * PAGE_SIZE, allPlayers.length)} z {allPlayers.length})
+            </span>
+          </span>
+          <button
+            onClick={() => { setPage((p) => Math.min(totalPages, p + 1)); window.scrollTo({ top: 0, behavior: "smooth" }); }}
+            disabled={page === totalPages}
+            className="px-4 py-2 rounded-lg border border-border text-sm font-semibold disabled:opacity-40 disabled:cursor-not-allowed hover:bg-muted transition-colors"
+          >
+            Następna →
+          </button>
+        </div>
+      )}
 
       {/* Last updated info */}
       <div className="mt-4 text-xs text-muted-foreground flex items-center gap-1.5">
