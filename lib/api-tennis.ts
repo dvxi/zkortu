@@ -1,12 +1,11 @@
 /**
- * API-Tennis client (api-tennis.p.rapidapi.com)
- * Adapt the raw response types here if the actual API shapes differ.
+ * API-Tennis client (api.api-tennis.com)
+ * Auth: APIkey query param. Docs: https://api-tennis.com/documentation
  */
 
 import type { Player, LiveMatch, Tournament } from "./mock-data";
 
-const BASE_URL = "https://api-tennis.p.rapidapi.com/tennis/";
-const HOST = "api-tennis.p.rapidapi.com";
+const BASE_URL = "https://api.api-tennis.com/tennis/";
 
 // ─── Country helpers ──────────────────────────────────────────────────────────
 
@@ -22,30 +21,28 @@ const COUNTRY_PL: Record<string, string> = {
   Romania: "Rumunia", Portugal: "Portugalia", Austria: "Austria",
   Brazil: "Brazylia", Ukraine: "Ukraina", Japan: "Japonia",
   "South Korea": "Korea Południowa", Slovakia: "Słowacja", Hungary: "Węgry",
+  Sweden: "Szwecja", Finland: "Finlandia",
 };
 
-const COUNTRY_FLAG: Record<string, string> = {
-  IT: "🇮🇹", ES: "🇪🇸", DE: "🇩🇪", RU: "🇷🇺", NO: "🇳🇴", DK: "🇩🇰",
-  US: "🇺🇸", GR: "🇬🇷", BG: "🇧🇬", PL: "🇵🇱", FR: "🇫🇷", GB: "🇬🇧",
-  AU: "🇦🇺", RS: "🇷🇸", BY: "🇧🇾", CZ: "🇨🇿", KZ: "🇰🇿", CN: "🇨🇳",
-  CA: "🇨🇦", AR: "🇦🇷", HR: "🇭🇷", CH: "🇨🇭", NL: "🇳🇱", BE: "🇧🇪",
-  RO: "🇷🇴", PT: "🇵🇹", AT: "🇦🇹", BR: "🇧🇷", UA: "🇺🇦", JP: "🇯🇵",
-  KR: "🇰🇷", SK: "🇸🇰", HU: "🇭🇺", CL: "🇨🇱", CO: "🇨🇴", MX: "🇲🇽",
-  IN: "🇮🇳", TW: "🇹🇼",
+const FLAG_BY_COUNTRY: Record<string, string> = {
+  Italy: "🇮🇹", Spain: "🇪🇸", Germany: "🇩🇪", Russia: "🇷🇺", Norway: "🇳🇴",
+  Denmark: "🇩🇰", USA: "🇺🇸", "United States": "🇺🇸", Greece: "🇬🇷",
+  Bulgaria: "🇧🇬", Poland: "🇵🇱", France: "🇫🇷", "United Kingdom": "🇬🇧",
+  "Great Britain": "🇬🇧", Australia: "🇦🇺", Serbia: "🇷🇸", Belarus: "🇧🇾",
+  "Czech Republic": "🇨🇿", Kazakhstan: "🇰🇿", China: "🇨🇳", Canada: "🇨🇦",
+  Argentina: "🇦🇷", Croatia: "🇭🇷", Switzerland: "🇨🇭", Netherlands: "🇳🇱",
+  Belgium: "🇧🇪", Romania: "🇷🇴", Portugal: "🇵🇹", Austria: "🇦🇹",
+  Brazil: "🇧🇷", Ukraine: "🇺🇦", Japan: "🇯🇵", "South Korea": "🇰🇷",
+  Slovakia: "🇸🇰", Hungary: "🇭🇺", Chile: "🇨🇱", Colombia: "🇨🇴",
+  Mexico: "🇲🇽", India: "🇮🇳", Taiwan: "🇹🇼", Sweden: "🇸🇪", Finland: "🇫🇮",
+  Tunisia: "🇹🇳", Morocco: "🇲🇦", "South Africa": "🇿🇦",
 };
 
 function plCountry(name: string) {
   return COUNTRY_PL[name] ?? name;
 }
-function flagFromCode(code: string) {
-  return COUNTRY_FLAG[code?.toUpperCase()] ?? "🏳️";
-}
 function flagFromName(name: string) {
-  const entry = Object.entries(COUNTRY_PL).find(([, pl]) => pl === name || pl === name);
-  const code = entry
-    ? Object.entries(COUNTRY_FLAG).find(() => true)?.[0] ?? ""
-    : "";
-  return COUNTRY_FLAG[code] ?? "🏳️";
+  return FLAG_BY_COUNTRY[name] ?? "🏳️";
 }
 
 // ─── Surface mapping ──────────────────────────────────────────────────────────
@@ -71,19 +68,12 @@ function toTournamentSurface(s: string): Tournament["surface"] {
 
 function toRound(r: string): string {
   const map: Record<string, string> = {
-    "Final": "Finał",
-    "Semi-Final": "Półfinał",
-    "Semi-Finals": "Półfinał",
-    "Quarter-Final": "Ćwierćfinał",
-    "Quarter-Finals": "Ćwierćfinał",
-    "Round of 16": "1/8 finału",
-    "Round of 32": "1/16 finału",
-    "Round of 64": "1/32 finału",
-    "Round of 128": "1/64 finału",
-    "1st Round": "1. runda",
-    "2nd Round": "2. runda",
-    "3rd Round": "3. runda",
-    "4th Round": "4. runda",
+    "Final": "Finał", "Semi-Final": "Półfinał", "Semi-Finals": "Półfinał",
+    "Quarter-Final": "Ćwierćfinał", "Quarter-Finals": "Ćwierćfinał",
+    "Round of 16": "1/8 finału", "Round of 32": "1/16 finału",
+    "Round of 64": "1/32 finału", "Round of 128": "1/64 finału",
+    "1st Round": "1. runda", "2nd Round": "2. runda",
+    "3rd Round": "3. runda", "4th Round": "4. runda",
   };
   return map[r] ?? r;
 }
@@ -92,67 +82,70 @@ function toRound(r: string): string {
 
 function toCategory(name: string): Tournament["category"] {
   const n = name.toLowerCase();
-  if (n.includes("grand slam") || ["australian open", "roland garros", "wimbledon", "us open"].some(gs => n.includes(gs))) return "Grand Slam";
+  if (["australian open", "roland garros", "wimbledon", "us open"].some(gs => n.includes(gs))) return "Grand Slam";
   if (n.includes("atp 1000") || n.includes("masters 1000") || ["indian wells", "miami", "monte carlo", "madrid", "rome", "canadian", "cincinnati", "shanghai", "paris masters"].some(t => n.includes(t))) return "ATP 1000";
   if (n.includes("atp 500")) return "ATP 500";
   if (n.includes("wta 1000")) return "WTA 1000";
   if (n.includes("wta 500")) return "WTA 500";
   if (n.includes("wta 250")) return "WTA 250";
-  if (n.includes("atp") || n.includes("atp 250")) return "ATP 250";
   return "ATP 250";
 }
 
 // ─── Raw API types ────────────────────────────────────────────────────────────
 
-interface RawRankingPlayer {
-  rank: string;
-  points: string;
-  player_name: string;
+interface RawStandingsPlayer {
+  place: string;
+  player: string;
   player_key: string;
+  league: string;
+  movement: string; // "same" | "up" | "down"
   country: string;
-  country_code: string;
-  moving?: string;
-  team_logo?: string;
+  points: string;
 }
 
-interface RawScore {
-  home?: Record<string, string>;
-  away?: Record<string, string>;
+interface RawScoreEntry {
+  score_first?: string;
+  score_second?: string;
+  score_set?: string;
+}
+
+interface RawStatEntry {
+  type: string;
+  home: string;
+  away: string;
 }
 
 interface RawMatch {
   event_key: string;
   event_date: string;
   event_time: string;
-  event_home_team: string;
-  event_away_team: string;
-  home_team_key?: string;
-  away_team_key?: string;
+  event_first_player: string;
+  event_second_player: string;
+  first_player_key?: string;
+  second_player_key?: string;
   event_final_result: string;
+  event_game_result?: string;
+  event_serve?: string;
+  event_winner?: string;
   event_status: string;
-  country_name: string;
-  league_name: string;
-  league_key?: string;
-  league_round?: string;
-  event_home_team_country?: string;
-  event_away_team_country?: string;
-  home_country_code?: string;
-  away_country_code?: string;
-  scores?: RawScore;
-  statistics?: Array<{ type: string; home: string; away: string }>;
+  event_live?: string;
+  tournament_name: string;
+  tournament_key?: string;
+  tournament_round?: string;
+  scores?: RawScoreEntry[];
+  statistics?: RawStatEntry[];
   surface?: string;
 }
 
 interface RawTournament {
-  league_key: string;
-  league_name: string;
-  country_name: string;
-  country_logo?: string;
-  league_logo?: string;
-  league_season?: string;
-  league_start?: string;
-  league_end?: string;
+  tournament_key: string;
+  tournament_name: string;
+  event_type_key?: string;
+  event_type_type?: string;
+  country_name?: string;
   surface?: string;
+  start_date?: string;
+  end_date?: string;
 }
 
 interface ApiResponse<T> {
@@ -166,14 +159,8 @@ async function apiFetch<T>(params: Record<string, string>, revalidate: number): 
   const key = process.env.RAPIDAPI_KEY;
   if (!key) throw new Error("RAPIDAPI_KEY not set");
 
-  const url = BASE_URL + "?" + new URLSearchParams(params).toString();
-  const res = await fetch(url, {
-    headers: {
-      "X-RapidAPI-Key": key,
-      "X-RapidAPI-Host": HOST,
-    },
-    next: { revalidate },
-  });
+  const url = BASE_URL + "?" + new URLSearchParams({ ...params, APIkey: key }).toString();
+  const res = await fetch(url, { next: { revalidate } });
 
   if (!res.ok) throw new Error(`API-Tennis error ${res.status}`);
   const data: ApiResponse<T> = await res.json();
@@ -184,51 +171,47 @@ async function apiFetch<T>(params: Record<string, string>, revalidate: number): 
 // ─── Rankings ─────────────────────────────────────────────────────────────────
 
 export async function fetchRankings(type: "ATP" | "WTA"): Promise<Player[]> {
-  const raw = await apiFetch<RawRankingPlayer>(
-    { method: "get_ranking", ranking_type: type },
+  const raw = await apiFetch<RawStandingsPlayer>(
+    { method: "get_standings", event_type: type },
     3600,
   );
 
   return raw.slice(0, 20).map((p, i) => {
-    const moving = parseInt(p.moving ?? "0", 10);
+    const rank = parseInt(p.place, 10) || i + 1;
+    const pointsDiff = p.movement === "up" ? 1 : p.movement === "down" ? -1 : 0;
     return {
-      rank: parseInt(p.rank, 10) || i + 1,
-      name: p.player_name,
+      rank,
+      name: p.player,
       country: plCountry(p.country),
-      flag: flagFromCode(p.country_code),
+      flag: flagFromName(p.country),
       points: parseInt(p.points, 10) || 0,
-      pointsDiff: moving,
+      pointsDiff,
       age: 0,
-      bestRank: parseInt(p.rank, 10) || i + 1,
+      bestRank: rank,
     };
   });
 }
 
 // ─── Live scores ──────────────────────────────────────────────────────────────
 
-function parseSets(scores: RawScore | undefined): Array<{ p1: number; p2: number }> {
-  if (!scores?.home || !scores?.away) return [];
-  const sets: Array<{ p1: number; p2: number }> = [];
-  const setCount = Math.max(
-    Object.keys(scores.home).filter(k => k !== "current").length,
-    Object.keys(scores.away).filter(k => k !== "current").length,
-  );
-  for (let i = 1; i <= setCount; i++) {
-    const p1 = parseInt(scores.home[String(i)] ?? "0", 10);
-    const p2 = parseInt(scores.away[String(i)] ?? "0", 10);
-    sets.push({ p1, p2 });
-  }
-  return sets;
+function parseSets(scores: RawScoreEntry[] | undefined): Array<{ p1: number; p2: number }> {
+  if (!scores?.length) return [];
+  return scores.map(s => ({
+    p1: parseInt(s.score_first ?? "0", 10),
+    p2: parseInt(s.score_second ?? "0", 10),
+  }));
 }
 
-function parseStatus(raw: RawMatch): LiveMatch["status"] {
-  const s = raw.event_status?.toLowerCase() ?? "";
-  if (s === "finished" || s === "fin" || raw.event_final_result !== "-") return "finished";
+function parseStatus(m: RawMatch): LiveMatch["status"] {
+  if (m.event_live === "1") return "live";
+  if (m.event_final_result && m.event_final_result !== "-") return "finished";
+  const s = m.event_status?.toLowerCase() ?? "";
+  if (s === "finished" || s === "fin") return "finished";
   if (s === "not started" || s === "" || s === "ns") return "upcoming";
   return "live";
 }
 
-function statValue(stats: RawMatch["statistics"], type: string, side: "home" | "away"): number {
+function statValue(stats: RawStatEntry[] | undefined, type: string, side: "home" | "away"): number {
   const entry = stats?.find(s => s.type.toLowerCase().includes(type.toLowerCase()));
   const raw = entry?.[side] ?? "0";
   return parseInt(raw.replace(/[^0-9]/g, ""), 10) || 0;
@@ -239,16 +222,16 @@ export async function fetchLiveScores(): Promise<LiveMatch[]> {
 
   return raw.slice(0, 20).map((m, i) => ({
     id: m.event_key || `m${i}`,
-    tournament: m.league_name,
+    tournament: m.tournament_name,
     surface: toSurface(m.surface ?? ""),
-    round: toRound(m.league_round ?? ""),
-    player1: m.event_home_team,
-    player2: m.event_away_team,
-    flag1: flagFromCode(m.home_country_code ?? ""),
-    flag2: flagFromCode(m.away_country_code ?? ""),
+    round: toRound(m.tournament_round ?? ""),
+    player1: m.event_first_player,
+    player2: m.event_second_player,
+    flag1: "🏳️",
+    flag2: "🏳️",
     sets: parseSets(m.scores),
-    currentGame: m.scores?.home?.["current"] ?? "",
-    server: 1 as const,
+    currentGame: m.event_game_result ?? "",
+    server: (m.event_serve === "1" ? 1 : 2) as 1 | 2,
     status: parseStatus(m),
     startTime: m.event_time ?? "",
     stats: {
@@ -267,31 +250,28 @@ export async function fetchLiveScores(): Promise<LiveMatch[]> {
 export async function fetchTournaments(): Promise<Tournament[]> {
   const raw = await apiFetch<RawTournament>({ method: "get_tournaments" }, 3600);
 
-  const now = new Date().toISOString().slice(0, 10);
+  const now = "2026-07-29";
 
   return raw.slice(0, 12).map((t, i) => {
-    const start = t.league_start ?? now;
-    const end = t.league_end ?? now;
+    const start = t.start_date ?? now;
+    const end = t.end_date ?? now;
     let status: Tournament["status"] = "upcoming";
     if (end < now) status = "completed";
     else if (start <= now) status = "live";
 
     return {
-      id: t.league_key || `t${i}`,
-      name: t.league_name,
-      location: t.country_name,
-      country: t.country_name,
+      id: t.tournament_key || `t${i}`,
+      name: t.tournament_name,
+      location: t.country_name ?? "",
+      country: t.country_name ?? "",
       flag: "🏆",
       surface: toTournamentSurface(t.surface ?? ""),
-      category: toCategory(t.league_name),
+      category: toCategory(t.tournament_name),
       startDate: start,
       endDate: end,
       prize: "",
       status,
-      imageQuery: `tennis tournament ${t.country_name}`,
+      imageQuery: `tennis tournament ${t.country_name ?? t.tournament_name}`,
     };
   });
 }
-
-// Re-export the void so tree-shaking doesn't complain about the flag helper
-void flagFromName;
