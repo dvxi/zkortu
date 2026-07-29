@@ -26,8 +26,10 @@ const newsImageSeeds = [
 
 function getDateLabel(dateStr: string): string {
   const today = new Date().toISOString().slice(0, 10);
-  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const dayBefore = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+  const _y = new Date(); _y.setDate(_y.getDate() - 1);
+  const yesterday = _y.toISOString().slice(0, 10);
+  const _db = new Date(); _db.setDate(_db.getDate() - 2);
+  const dayBefore = _db.toISOString().slice(0, 10);
   if (dateStr === today) return "Dziś";
   if (dateStr === yesterday) return "Wczoraj";
   if (dateStr === dayBefore) return "Przedwczoraj";
@@ -58,8 +60,10 @@ export default function AktualnosciPage() {
   }, []);
 
   const todayStr = new Date().toISOString().slice(0, 10);
-  const yesterdayStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
-  const weekAgoStr = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
+  const _yesterday = new Date(); _yesterday.setDate(_yesterday.getDate() - 1);
+  const yesterdayStr = _yesterday.toISOString().slice(0, 10);
+  const _weekAgo = new Date(); _weekAgo.setDate(_weekAgo.getDate() - 7);
+  const weekAgoStr = _weekAgo.toISOString().slice(0, 10);
 
   const filtered = newsArticles.filter((a) => {
     const matchesCategory = category === "Wszystkie" || a.category === category;

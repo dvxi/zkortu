@@ -74,6 +74,69 @@ export async function getAllArticleSlugs(): Promise<string[]> {
   }
 }
 
+// ── Junior Players ────────────────────────────────────────────────────────────
+
+export interface SanityJuniorPlayer {
+  _id: string;
+  tour: "Boys" | "Girls";
+  rank: number;
+  name: string;
+  countryCode: string;
+  points: number;
+  pointsDiff: number;
+  rankingDate: string;
+}
+
+const JUNIOR_COUNTRY_PL: Record<string, string> = {
+  AL: "Albania", AR: "Argentyna", AU: "Australia", AT: "Austria",
+  BE: "Belgia", BY: "Białoruś", BR: "Brazylia", BG: "Bułgaria",
+  CL: "Chile", CN: "Chiny", HR: "Chorwacja", CZ: "Czechy",
+  DK: "Dania", FI: "Finlandia", FR: "Francja", GR: "Grecja",
+  ES: "Hiszpania", NL: "Holandia", HK: "Hong Kong", IN: "Indie",
+  JP: "Japonia", CA: "Kanada", KZ: "Kazachstan", KR: "Korea Południowa",
+  MX: "Meksyk", DE: "Niemcy", NO: "Norwegia", PL: "Polska",
+  PT: "Portugalia", RU: "Rosja", RO: "Rumunia", RS: "Serbia",
+  SK: "Słowacja", CH: "Szwajcaria", SE: "Szwecja", TW: "Tajwan",
+  UA: "Ukraina", US: "USA", HU: "Węgry", GB: "Wielka Brytania", IT: "Włochy",
+};
+
+const JUNIOR_FLAG: Record<string, string> = {
+  AL: "🇦🇱", AR: "🇦🇷", AU: "🇦🇺", AT: "🇦🇹", BE: "🇧🇪", BY: "🇧🇾",
+  BR: "🇧🇷", BG: "🇧🇬", CL: "🇨🇱", CN: "🇨🇳", HR: "🇭🇷", CZ: "🇨🇿",
+  DK: "🇩🇰", FI: "🇫🇮", FR: "🇫🇷", GR: "🇬🇷", ES: "🇪🇸", NL: "🇳🇱",
+  HK: "🇭🇰", IN: "🇮🇳", JP: "🇯🇵", CA: "🇨🇦", KZ: "🇰🇿", KR: "🇰🇷",
+  MX: "🇲🇽", DE: "🇩🇪", NO: "🇳🇴", PL: "🇵🇱", PT: "🇵🇹", RU: "🇷🇺",
+  RO: "🇷🇴", RS: "🇷🇸", SK: "🇸🇰", CH: "🇨🇭", SE: "🇸🇪", TW: "🇹🇼",
+  UA: "🇺🇦", US: "🇺🇸", HU: "🇭🇺", GB: "🇬🇧", IT: "🇮🇹",
+};
+
+export function juniorToPlayer(p: SanityJuniorPlayer) {
+  return {
+    rank: p.rank,
+    name: p.name,
+    country: JUNIOR_COUNTRY_PL[p.countryCode] ?? p.countryCode,
+    flag: JUNIOR_FLAG[p.countryCode] ?? "🏳️",
+    points: p.points,
+    pointsDiff: p.pointsDiff ?? 0,
+    age: 0,
+    bestRank: p.rank,
+  };
+}
+
+export async function getAllJuniorPlayers(tour: "Boys" | "Girls"): Promise<SanityJuniorPlayer[]> {
+  if (!isSanityConfigured()) return [];
+  try {
+    const results = await getClient().fetch<SanityJuniorPlayer[]>(
+      `*[_type == "juniorPlayer" && tour == $tour] | order(rank asc) { _id, tour, rank, name, countryCode, points, pointsDiff, rankingDate }`,
+      { tour },
+    );
+    return Array.isArray(results) ? results : [];
+  } catch (err) {
+    console.error("Sanity getAllJuniorPlayers error:", err);
+    return [];
+  }
+}
+
 // ── Video ─────────────────────────────────────────────────────────────────────
 
 export interface SanityVideo {

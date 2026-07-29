@@ -1,7 +1,8 @@
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Minus, Trophy, Star, CalendarDays } from "lucide-react";
-import { juniorAtpPlayers, juniorWtaPlayers } from "@/lib/mock-data";
+import { juniorAtpPlayers, juniorWtaPlayers, type Player } from "@/lib/mock-data";
+import { getAllJuniorPlayers, juniorToPlayer } from "@/lib/sanity";
 
 function PointsDiff({ diff }: { diff: number }) {
   if (diff > 0)
@@ -61,7 +62,63 @@ const surfaceColors: Record<string, string> = {
   Hard: "bg-blue-100 text-blue-700",
 };
 
-export default function TenisJuniorskiPage() {
+function RankingCard({ title, players }: { title: string; players: Player[] }) {
+  return (
+    <div className="rounded-xl overflow-hidden border border-border">
+      <div className="px-4 py-3 border-b border-border" style={{ backgroundColor: "var(--brand)" }}>
+        <h3 className="font-bold text-white flex items-center gap-2">
+          <Trophy className="h-4 w-4" style={{ color: "var(--gold)" }} />
+          {title}
+        </h3>
+      </div>
+      <div className="divide-y divide-border bg-card">
+        {players.length === 0 ? (
+          <p className="px-4 py-6 text-sm text-muted-foreground text-center">Brak danych rankingowych.</p>
+        ) : (
+          players.map((player) => (
+            <div
+              key={player.rank}
+              className={`flex items-center gap-3 px-4 py-2.5 text-sm ${player.rank <= 3 ? "bg-muted/30" : "hover:bg-muted/20 transition-colors"}`}
+            >
+              <span
+                className={`w-5 text-center font-bold text-xs ${
+                  player.rank === 1 ? "text-yellow-500" : player.rank === 2 ? "text-slate-400" : player.rank === 3 ? "text-amber-600" : "text-muted-foreground"
+                }`}
+              >
+                {player.rank}
+              </span>
+              <span className="flex-1 font-medium truncate">
+                {player.flag} {player.name}
+                {player.country === "Polska" && (
+                  <span className="ml-1.5 text-xs" style={{ color: "var(--gold)" }}>★</span>
+                )}
+              </span>
+              <span className="text-xs text-muted-foreground">{player.points}p</span>
+              <PointsDiff diff={player.pointsDiff} />
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+export default async function TenisJuniorskiPage() {
+  const [sanityBoys, sanityGirls] = await Promise.all([
+    getAllJuniorPlayers("Boys"),
+    getAllJuniorPlayers("Girls"),
+  ]);
+
+  const boysPlayers: Player[] = sanityBoys.length > 0
+    ? sanityBoys.map(juniorToPlayer)
+    : juniorAtpPlayers;
+
+  const girlsPlayers: Player[] = sanityGirls.length > 0
+    ? sanityGirls.map(juniorToPlayer)
+    : juniorWtaPlayers;
+
+  const rankingDate = sanityBoys[0]?.rankingDate ?? sanityGirls[0]?.rankingDate ?? null;
+
   return (
     <div>
       {/* Hero */}
@@ -107,77 +164,19 @@ export default function TenisJuniorskiPage() {
           <div className="lg:col-span-2 space-y-10">
             {/* Rankings side by side */}
             <section>
-              <h2 className="text-xl font-black mb-5" style={{ color: "var(--brand)" }}>
-                Rankingi juniorów
-              </h2>
+              <div className="flex items-center justify-between mb-5">
+                <h2 className="text-xl font-black" style={{ color: "var(--brand)" }}>
+                  Rankingi juniorów ITF
+                </h2>
+                {rankingDate && (
+                  <span className="text-xs text-muted-foreground">
+                    Aktualizacja: {new Date(rankingDate).toLocaleDateString("pl-PL", { day: "numeric", month: "long", year: "numeric" })}
+                  </span>
+                )}
+              </div>
               <div className="grid grid-cols-1 sm:grid-cols-2 gap-5">
-                {/* Junior ATP */}
-                <div className="rounded-xl overflow-hidden border border-border">
-                  <div className="px-4 py-3 border-b border-border" style={{ backgroundColor: "var(--brand)" }}>
-                    <h3 className="font-bold text-white flex items-center gap-2">
-                      <Trophy className="h-4 w-4" style={{ color: "var(--gold)" }} />
-                      Ranking Juniorów ATP
-                    </h3>
-                  </div>
-                  <div className="divide-y divide-border bg-card">
-                    {juniorAtpPlayers.map((player) => (
-                      <div
-                        key={player.rank}
-                        className={`flex items-center gap-3 px-4 py-2.5 text-sm ${player.rank <= 3 ? "bg-muted/30" : "hover:bg-muted/20 transition-colors"}`}
-                      >
-                        <span
-                          className={`w-5 text-center font-bold text-xs ${
-                            player.rank === 1 ? "text-yellow-500" : player.rank === 2 ? "text-slate-400" : player.rank === 3 ? "text-amber-600" : "text-muted-foreground"
-                          }`}
-                        >
-                          {player.rank}
-                        </span>
-                        <span className="flex-1 font-medium truncate">
-                          {player.flag} {player.name}
-                          {player.country === "Polska" && (
-                            <span className="ml-1.5 text-xs" style={{ color: "var(--gold)" }}>★</span>
-                          )}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{player.points}p</span>
-                        <PointsDiff diff={player.pointsDiff} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
-
-                {/* Junior WTA */}
-                <div className="rounded-xl overflow-hidden border border-border">
-                  <div className="px-4 py-3 border-b border-border" style={{ backgroundColor: "var(--brand)" }}>
-                    <h3 className="font-bold text-white flex items-center gap-2">
-                      <Trophy className="h-4 w-4" style={{ color: "var(--gold)" }} />
-                      Ranking Juniorek WTA
-                    </h3>
-                  </div>
-                  <div className="divide-y divide-border bg-card">
-                    {juniorWtaPlayers.map((player) => (
-                      <div
-                        key={player.rank}
-                        className={`flex items-center gap-3 px-4 py-2.5 text-sm ${player.rank <= 3 ? "bg-muted/30" : "hover:bg-muted/20 transition-colors"}`}
-                      >
-                        <span
-                          className={`w-5 text-center font-bold text-xs ${
-                            player.rank === 1 ? "text-yellow-500" : player.rank === 2 ? "text-slate-400" : player.rank === 3 ? "text-amber-600" : "text-muted-foreground"
-                          }`}
-                        >
-                          {player.rank}
-                        </span>
-                        <span className="flex-1 font-medium truncate">
-                          {player.flag} {player.name}
-                          {player.country === "Polska" && (
-                            <span className="ml-1.5 text-xs" style={{ color: "var(--gold)" }}>★</span>
-                          )}
-                        </span>
-                        <span className="text-xs text-muted-foreground">{player.points}p</span>
-                        <PointsDiff diff={player.pointsDiff} />
-                      </div>
-                    ))}
-                  </div>
-                </div>
+                <RankingCard title="Ranking Chłopców ITF" players={boysPlayers} />
+                <RankingCard title="Ranking Dziewcząt ITF" players={girlsPlayers} />
               </div>
             </section>
 
