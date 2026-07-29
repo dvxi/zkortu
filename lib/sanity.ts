@@ -10,7 +10,7 @@ function getClient() {
     projectId: process.env.NEXT_PUBLIC_SANITY_PROJECT_ID!,
     dataset: process.env.NEXT_PUBLIC_SANITY_DATASET ?? "production",
     apiVersion: "2024-01-01",
-    useCdn: true,
+    useCdn: false,
     token: process.env.SANITY_API_TOKEN,
   });
 }
@@ -38,12 +38,12 @@ const ARTICLE_FIELDS = `
 export async function getAllArticles(): Promise<NewsArticle[]> {
   if (!isSanityConfigured()) return [];
   try {
-    return await getClient().fetch(
+    const results = await getClient().fetch<NewsArticle[]>(
       `*[_type == "article"] | order(date desc) { ${ARTICLE_FIELDS} }`,
-      {},
-      { next: { revalidate: 60 } },
     );
-  } catch {
+    return Array.isArray(results) ? results : [];
+  } catch (err) {
+    console.error("Sanity getAllArticles error:", err);
     return [];
   }
 }
@@ -51,12 +51,12 @@ export async function getAllArticles(): Promise<NewsArticle[]> {
 export async function getArticleBySlug(slug: string): Promise<NewsArticle | null> {
   if (!isSanityConfigured()) return null;
   try {
-    return await getClient().fetch(
+    return await getClient().fetch<NewsArticle | null>(
       `*[_type == "article" && slug.current == $slug][0] { ${ARTICLE_FIELDS} }`,
       { slug },
-      { next: { revalidate: 60 } },
     );
-  } catch {
+  } catch (err) {
+    console.error("Sanity getArticleBySlug error:", err);
     return null;
   }
 }
@@ -64,13 +64,12 @@ export async function getArticleBySlug(slug: string): Promise<NewsArticle | null
 export async function getAllArticleSlugs(): Promise<string[]> {
   if (!isSanityConfigured()) return [];
   try {
-    const results: Array<{ slug: string }> = await getClient().fetch(
+    const results = await getClient().fetch<Array<{ slug: string }>>(
       `*[_type == "article"]{ "slug": slug.current }`,
-      {},
-      { next: { revalidate: 3600 } },
     );
-    return results.map((r) => r.slug).filter(Boolean);
-  } catch {
+    return Array.isArray(results) ? results.map((r) => r.slug).filter(Boolean) : [];
+  } catch (err) {
+    console.error("Sanity getAllArticleSlugs error:", err);
     return [];
   }
 }

@@ -77,7 +77,6 @@ function RankingTable({ players, variant }: RankingTableProps) {
             <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 w-12">#</th>
             <th className="text-left px-4 py-3 text-xs font-semibold text-white/70">Zawodnik</th>
             <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 hidden sm:table-cell">Kraj</th>
-            <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 hidden md:table-cell">Wiek</th>
             <th className="text-right px-4 py-3 text-xs font-semibold text-white/70">Punkty</th>
             <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 hidden sm:table-cell">Zmiana</th>
             <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 hidden lg:table-cell">Najlepszy</th>
@@ -106,9 +105,7 @@ function RankingTable({ players, variant }: RankingTableProps) {
               <td className="px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">
                 {player.country}
               </td>
-              <td className="px-4 py-3 text-sm text-muted-foreground hidden md:table-cell">
-                {player.age}
-              </td>
+
               <td className="px-4 py-3 text-right">
                 <span className="font-bold text-sm">
                   {player.points.toLocaleString("pl-PL")}
