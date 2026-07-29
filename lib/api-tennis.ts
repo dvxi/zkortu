@@ -177,7 +177,7 @@ export async function fetchRankings(type: "ATP" | "WTA"): Promise<Player[]> {
     3600,
   );
 
-  return raw.slice(0, 20).map((p, i) => {
+  return raw.map((p, i) => {
     const rank = parseInt(p.place, 10) || i + 1;
     const pointsDiff = p.movement === "up" ? 1 : p.movement === "down" ? -1 : 0;
     return {
