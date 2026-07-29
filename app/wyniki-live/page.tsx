@@ -75,30 +75,28 @@ async function loadLiveScores(): Promise<LiveMatch[]> {
 }
 
 export default function WynikiLivePage() {
-  const [matches, setMatches] = useState<LiveMatch[]>(mockMatches);
-  const [selected, setSelected] = useState<string>(mockMatches[0].id);
+  const [matches, setMatches] = useState<LiveMatch[]>([]);
+  const [selected, setSelected] = useState<string>("");
   const [lastUpdated, setLastUpdated] = useState<Date>(new Date());
   const [refreshing, setRefreshing] = useState(false);
+  const [loading, setLoading] = useState(true);
 
-  const match = matches.find((m) => m.id === selected) ?? matches[0];
+  const match = matches.find((m) => m.id === selected) ?? matches[0] ?? null;
 
   async function handleRefresh() {
     setRefreshing(true);
     const fresh = await loadLiveScores();
-    if (fresh.length) {
-      setMatches(fresh);
-      setSelected(s => fresh.find(m => m.id === s) ? s : fresh[0].id);
-    }
+    setMatches(fresh);
+    if (fresh.length) setSelected(s => fresh.find(m => m.id === s) ? s : fresh[0].id);
     setLastUpdated(new Date());
     setRefreshing(false);
   }
 
   useEffect(() => {
     loadLiveScores().then(d => {
-      if (d.length) {
-        setMatches(d);
-        setSelected(d[0].id);
-      }
+      setMatches(d);
+      if (d.length) setSelected(d[0].id);
+      setLoading(false);
     });
     const interval = setInterval(() => setLastUpdated(new Date()), 60000);
     return () => clearInterval(interval);
@@ -127,6 +125,11 @@ export default function WynikiLivePage() {
         </button>
       </div>
 
+      {loading ? (
+        <p className="text-sm text-muted-foreground py-12 text-center">Ładowanie wyników…</p>
+      ) : matches.length === 0 ? (
+        <p className="text-sm text-muted-foreground py-12 text-center">Brak aktualnych meczów live.</p>
+      ) : (
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
         {/* ── Sidebar: match list ── */}
         <div className="lg:col-span-1 space-y-2">
@@ -368,6 +371,7 @@ export default function WynikiLivePage() {
           </div>
         </div>
       </div>
+      )}
     </div>
   );
 }

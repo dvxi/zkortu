@@ -73,3 +73,42 @@ export async function getAllArticleSlugs(): Promise<string[]> {
     return [];
   }
 }
+
+// ── Video ─────────────────────────────────────────────────────────────────────
+
+export interface SanityVideo {
+  id: string;
+  title: string;
+  youtubeUrl: string;
+  description?: string;
+  players?: string;
+  tournament?: string;
+  date?: string;
+  duration?: string;
+  category?: "Highlights" | "Full Match" | "Interview" | "Analysis";
+}
+
+const VIDEO_FIELDS = `
+  "id": _id,
+  title,
+  youtubeUrl,
+  description,
+  players,
+  tournament,
+  date,
+  duration,
+  category
+`;
+
+export async function getAllVideos(): Promise<SanityVideo[]> {
+  if (!isSanityConfigured()) return [];
+  try {
+    const results = await getClient().fetch<SanityVideo[]>(
+      `*[_type == "video"] | order(date desc) { ${VIDEO_FIELDS} }`,
+    );
+    return Array.isArray(results) ? results : [];
+  } catch (err) {
+    console.error("Sanity getAllVideos error:", err);
+    return [];
+  }
+}

@@ -24,11 +24,10 @@ import {
   LayoutGrid,
 } from "lucide-react";
 import {
-  tournaments as mockTournaments,
-  todayMatches,
   surfaceColors,
   categoryColors,
   type Tournament,
+  type LiveMatch,
 } from "@/lib/mock-data";
 
 const picsumSeedMap: Record<string, string> = {
@@ -151,24 +150,39 @@ async function loadCalendar(): Promise<Tournament[]> {
   try {
     const res = await fetch("/api/calendar");
     if (!res.ok) return [];
-    return res.json();
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
+  } catch {
+    return [];
+  }
+}
+
+async function loadLiveScores(): Promise<LiveMatch[]> {
+  try {
+    const res = await fetch("/api/livescores");
+    if (!res.ok) return [];
+    const data = await res.json();
+    return Array.isArray(data) ? data : [];
   } catch {
     return [];
   }
 }
 
 export default function KalendarzPage() {
-  const TODAY = "2026-06-02";
-  const [tournaments, setTournaments] = useState<Tournament[]>(mockTournaments);
+  const TODAY = new Date().toISOString().slice(0, 10);
+  const [tournaments, setTournaments] = useState<Tournament[]>([]);
   const [selectedTournament, setSelectedTournament] = useState<Tournament | null>(null);
   const [filter, setFilter] = useState<"all" | "live" | "upcoming" | "completed">("all");
   const [view, setView] = useState<"list" | "calendar">("calendar");
-  const [calYear, setCalYear] = useState(2026);
-  const [calMonth, setCalMonth] = useState(5); // 0-indexed, 5 = June
+  const [calYear, setCalYear] = useState(() => new Date().getFullYear());
+  const [calMonth, setCalMonth] = useState(() => new Date().getMonth());
   const [selectedDay, setSelectedDay] = useState<string>(TODAY);
+
+  const [todayMatches, setTodayMatches] = useState<LiveMatch[]>([]);
 
   useEffect(() => {
     loadCalendar().then(d => { if (d.length) setTournaments(d); });
+    loadLiveScores().then(d => setTodayMatches(d));
   }, []);
 
   // ── Calendar grid data ──────────────────────────────────────────────────────
@@ -208,7 +222,7 @@ export default function KalendarzPage() {
 
   // ── Right panel: selected day events ───────────────────────────────────────
   const dayTournaments = getTournamentsForDay(selectedDay, tournaments);
-  const dayMatches = todayMatches.filter(() => selectedDay === TODAY);
+  const dayMatches = selectedDay === TODAY ? todayMatches : [];
 
   const selectedDate = new Date(selectedDay + "T12:00:00");
   const selectedDateLabel = selectedDate.toLocaleDateString("pl-PL", {
@@ -553,15 +567,10 @@ export default function KalendarzPage() {
                   <p className="text-xs font-semibold text-muted-foreground uppercase tracking-wide">Mecze dzisiaj</p>
                 </div>
                 <div className="divide-y divide-border bg-card">
-                  {dayMatches.map((match) => (
-                    <div
-                      key={match.id}
-                      className="p-4 hover:bg-muted/20 transition-colors"
-                      onClick={() => {
-                        const t = tournaments.find((t) => t.id === match.tournamentId);
-                        if (t) setSelectedTournament(t);
-                      }}
-                    >
+                  {dayMatches.map((match) => {
+                    const setsStr = match.sets.map(s => `${s.p1}-${s.p2}`).join(", ");
+                    return (
+                    <div key={match.id} className="p-4 hover:bg-muted/20 transition-colors">
                       <div className="flex items-center justify-between mb-1.5">
                         <span className="text-xs text-muted-foreground truncate">{match.tournament}</span>
                         {match.status === "live" ? (
@@ -570,23 +579,24 @@ export default function KalendarzPage() {
                           <span className="text-xs text-green-600 font-medium flex-shrink-0 ml-2">Zakończony</span>
                         ) : (
                           <span className="flex items-center gap-1 text-xs text-muted-foreground flex-shrink-0 ml-2">
-                            <Clock className="h-3 w-3" />{match.time}
+                            <Clock className="h-3 w-3" />{match.startTime}
                           </span>
                         )}
                       </div>
                       <div className="space-y-0.5">
                         <div className="flex items-center justify-between text-sm">
                           <span className="font-semibold">{match.flag1} {match.player1}</span>
-                          {match.score && <span className="text-xs font-bold">{match.score.split(",")[0]}</span>}
+                          {setsStr && <span className="text-xs font-bold">{setsStr.split(",")[0]}</span>}
                         </div>
                         <div className="flex items-center justify-between text-sm">
                           <span className="font-semibold">{match.flag2} {match.player2}</span>
-                          {match.score && <span className="text-xs font-bold">{match.score.split(",")[1]?.trim()}</span>}
+                          {setsStr && <span className="text-xs font-bold">{setsStr.split(",")[1]?.trim()}</span>}
                         </div>
                       </div>
-                      <p className="text-xs text-muted-foreground mt-1">{match.court}</p>
+                      <p className="text-xs text-muted-foreground mt-1">{match.round}</p>
                     </div>
-                  ))}
+                    );
+                  })}
                 </div>
               </>
             )}

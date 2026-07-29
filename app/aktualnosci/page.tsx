@@ -24,13 +24,15 @@ const newsImageSeeds = [
   "tennis-news-clay",
 ];
 
-const dateLabel: Record<string, string> = {
-  "2026-06-02": "Dziś",
-  "2026-06-01": "Wczoraj",
-  "2026-05-31": "Przedwczoraj",
-  "2026-05-30": "30 maja",
-  "2026-05-29": "29 maja",
-};
+function getDateLabel(dateStr: string): string {
+  const today = new Date().toISOString().slice(0, 10);
+  const yesterday = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const dayBefore = new Date(Date.now() - 2 * 86400000).toISOString().slice(0, 10);
+  if (dateStr === today) return "Dziś";
+  if (dateStr === yesterday) return "Wczoraj";
+  if (dateStr === dayBefore) return "Przedwczoraj";
+  return new Date(dateStr + "T12:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "long" });
+}
 
 export default function AktualnosciPage() {
   const [search, setSearch] = useState("");
@@ -40,10 +42,19 @@ export default function AktualnosciPage() {
 
   useEffect(() => {
     fetch("/api/articles")
-      .then((r) => r.ok ? r.json() : null)
-      .then((d: NewsArticle[] | null) => { if (d?.length) setNewsArticles(d); })
+      .then(async (r) => {
+        if (r.status === 204) return null;
+        if (!r.ok) return null;
+        const data = await r.json();
+        return Array.isArray(data) && data.length > 0 ? data : null;
+      })
+      .then((d: NewsArticle[] | null) => { if (d) setNewsArticles(d); })
       .catch(() => {});
   }, []);
+
+  const todayStr = new Date().toISOString().slice(0, 10);
+  const yesterdayStr = new Date(Date.now() - 86400000).toISOString().slice(0, 10);
+  const weekAgoStr = new Date(Date.now() - 7 * 86400000).toISOString().slice(0, 10);
 
   const filtered = newsArticles.filter((a) => {
     const matchesCategory = category === "Wszystkie" || a.category === category;
@@ -53,9 +64,9 @@ export default function AktualnosciPage() {
       a.excerpt.toLowerCase().includes(search.toLowerCase());
     const matchesTab =
       tab === "wszystkie" ||
-      (tab === "dzisiaj" && a.date === "2026-06-02") ||
-      (tab === "wczoraj" && a.date === "2026-06-01") ||
-      (tab === "tydzien" && a.date < "2026-06-02");
+      (tab === "dzisiaj" && a.date === todayStr) ||
+      (tab === "wczoraj" && a.date === yesterdayStr) ||
+      (tab === "tydzien" && a.date >= weekAgoStr);
     return matchesCategory && matchesSearch && matchesTab;
   });
 
@@ -149,7 +160,7 @@ export default function AktualnosciPage() {
             <section key={date}>
               <div className="flex items-center gap-3 mb-5">
                 <h2 className="text-lg font-bold" style={{ color: "var(--brand)" }}>
-                  {dateLabel[date] || new Date(date).toLocaleDateString("pl-PL", { day: "numeric", month: "long" })}
+                  {getDateLabel(date)}
                 </h2>
                 <div className="flex-1 h-px bg-border" />
                 <span className="text-xs text-muted-foreground">{grouped[date].length} artykułów</span>

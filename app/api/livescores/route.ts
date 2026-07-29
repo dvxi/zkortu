@@ -7,6 +7,7 @@ export async function GET() {
     return NextResponse.json(matches);
   } catch (err) {
     console.error("Live scores fetch failed:", err);
-    return NextResponse.json({ error: "Nie można pobrać danych" }, { status: 503 });
+    console.error("Live scores fetch failed:", err);
+    return NextResponse.json([]);
   }
 }

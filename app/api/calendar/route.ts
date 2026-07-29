@@ -7,6 +7,7 @@ export async function GET() {
     return NextResponse.json(tournaments);
   } catch (err) {
     console.error("Calendar fetch failed:", err);
-    return NextResponse.json({ error: "Nie można pobrać danych" }, { status: 503 });
+    console.error("Calendar fetch failed:", err);
+    return NextResponse.json([]);
   }
 }

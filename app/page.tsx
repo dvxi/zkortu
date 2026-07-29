@@ -12,15 +12,9 @@ import {
   TrendingDown,
   Minus,
 } from "lucide-react";
-import {
-  liveMatches,
-  newsArticles,
-  atpPlayers,
-  wtaPlayers,
-  tournaments,
-  surfaceColors,
-  categoryColors,
-} from "@/lib/mock-data";
+import { surfaceColors, categoryColors } from "@/lib/mock-data";
+import { fetchRankings, fetchLiveScores, fetchTournaments } from "@/lib/api-tennis";
+import { getAllArticles } from "@/lib/sanity";
 
 function PointsDiff({ diff }: { diff: number }) {
   if (diff > 0)
@@ -43,10 +37,25 @@ function PointsDiff({ diff }: { diff: number }) {
   );
 }
 
-export default function HomePage() {
+export default async function HomePage() {
+  const [atpResult, wtaResult, tourResult, articlesResult, liveResult] =
+    await Promise.allSettled([
+      fetchRankings("ATP"),
+      fetchRankings("WTA"),
+      fetchTournaments(),
+      getAllArticles(),
+      fetchLiveScores(),
+    ]);
+
+  const atpPlayers = atpResult.status === "fulfilled" ? atpResult.value : [];
+  const wtaPlayers = wtaResult.status === "fulfilled" ? wtaResult.value : [];
+  const tournaments = tourResult.status === "fulfilled" ? tourResult.value : [];
+  const articles = articlesResult.status === "fulfilled" ? articlesResult.value : [];
+  const liveMatches = liveResult.status === "fulfilled" ? liveResult.value : [];
+
   const liveNow = liveMatches.filter((m) => m.status === "live");
-  const featured = newsArticles.find((a) => a.featured);
-  const sideNews = newsArticles.filter((a) => !a.featured).slice(0, 4);
+  const featured = articles.find((a) => a.featured) ?? articles[0] ?? null;
+  const sideNews = articles.filter((a) => a !== featured).slice(0, 3);
   const upcomingTournaments = tournaments.filter((t) => t.status === "upcoming").slice(0, 4);
 
   return (
@@ -60,7 +69,6 @@ export default function HomePage() {
           className="object-cover"
           priority
         />
-        {/* Colour gradient */}
         <div
           className="absolute inset-0"
           style={{
@@ -68,7 +76,6 @@ export default function HomePage() {
               "linear-gradient(to right, rgba(15,42,27,0.93) 40%, rgba(15,42,27,0.35) 100%)",
           }}
         />
-        {/* Dot-grid pattern — fades out towards the right where the photo shows */}
         <div
           className="absolute inset-0"
           style={{
@@ -87,16 +94,16 @@ export default function HomePage() {
               className="anim-fade-up mb-4 text-xs font-semibold tracking-widest uppercase border-0"
               style={{ backgroundColor: "var(--gold)", color: "var(--brand)" }}
             >
-              Roland Garros 2026 — Na żywo
+              Portal tenisowy — Na żywo
             </Badge>
             <h1 className="anim-fade-up anim-delay-1 text-4xl sm:text-5xl font-black text-white leading-tight mb-4">
-              Świątek triumfuje
+              Tenis na
               <br />
-              <span style={{ color: "var(--gold)" }}>po raz czwarty</span>
+              <span style={{ color: "var(--gold)" }}>najwyższym poziomie</span>
             </h1>
             <p className="anim-fade-up anim-delay-2 text-white/75 text-lg leading-relaxed mb-8">
-              Iga Świątek pokonała Arynę Sabalenkę 7–5, 6–3 w finale Roland Garros,
-              zdobywając swój czwarty kolejny tytuł w Paryżu.
+              Wyniki na żywo, rankingi ATP i WTA, kalendarz turniejów
+              i najnowsze aktualności ze świata tenisa.
             </p>
             <div className="anim-fade-up anim-delay-3 flex flex-wrap gap-3">
               <Link
@@ -104,7 +111,7 @@ export default function HomePage() {
                 className="inline-flex items-center gap-2 px-5 py-2.5 rounded font-semibold text-sm transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"
                 style={{ backgroundColor: "var(--gold)", color: "var(--brand)" }}
               >
-                Czytaj więcej <ArrowRight className="h-4 w-4" />
+                Aktualności <ArrowRight className="h-4 w-4" />
               </Link>
               <Link
                 href="/wyniki-live"
@@ -131,10 +138,7 @@ export default function HomePage() {
       {liveNow.length > 0 && (
         <div style={{ backgroundColor: "var(--brand-muted)" }} className="border-b border-white/10 overflow-hidden">
           <div className="flex items-stretch h-11">
-            {/* Fixed LIVE label */}
-            <div
-              className="flex items-center gap-2 px-4 flex-shrink-0 border-r border-white/10"
-            >
+            <div className="flex items-center gap-2 px-4 flex-shrink-0 border-r border-white/10">
               <span className="relative flex h-2 w-2 flex-shrink-0">
                 <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75" style={{ backgroundColor: "var(--live)" }} />
                 <span className="relative inline-flex rounded-full h-2 w-2" style={{ backgroundColor: "var(--live)" }} />
@@ -143,8 +147,6 @@ export default function HomePage() {
                 Live
               </span>
             </div>
-
-            {/* Scrolling matches */}
             <div className="flex-1 overflow-hidden relative">
               <div className="ticker-track flex items-center h-full gap-0">
                 {[...liveNow, ...liveNow].map((match, i) => (
@@ -184,7 +186,7 @@ export default function HomePage() {
       {/* ── Main Content ── */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-10">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-8">
-          {/* ── Left: News ── */}
+          {/* ── Left: News + Tournaments ── */}
           <div className="lg:col-span-2 space-y-8 anim-fade-up anim-delay-2">
             {/* Featured News */}
             <section>
@@ -201,9 +203,8 @@ export default function HomePage() {
                 </Link>
               </div>
 
-              {featured && (
+              {featured ? (
                 <div className="grid grid-cols-1 sm:grid-cols-5 gap-4">
-                  {/* Large featured */}
                   <Link
                     href={`/aktualnosci/${featured.id}`}
                     className="sm:col-span-3 group block rounded-xl overflow-hidden relative"
@@ -242,9 +243,8 @@ export default function HomePage() {
                     </div>
                   </Link>
 
-                  {/* Side news */}
                   <div className="sm:col-span-2 flex flex-col gap-3">
-                    {sideNews.slice(0, 3).map((article, i) => (
+                    {sideNews.map((article, i) => (
                       <Link
                         key={article.id}
                         href={`/aktualnosci/${article.id}`}
@@ -252,7 +252,7 @@ export default function HomePage() {
                       >
                         <div className="relative w-20 h-16 rounded overflow-hidden flex-shrink-0">
                           <Image
-                            src={`https://picsum.photos/seed/${["tennis-news-atp","tennis-news-wta","tennis-news-rg"][i]}/160/128`}
+                            src={`https://picsum.photos/seed/${["tennis-news-atp","tennis-news-wta","tennis-news-rg"][i] ?? "tennis-news-ao"}/160/128`}
                             alt={article.title}
                             fill
                             className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -273,6 +273,8 @@ export default function HomePage() {
                     ))}
                   </div>
                 </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Brak aktualności — dodaj artykuły w panelu CMS.</p>
               )}
             </section>
 
@@ -291,56 +293,59 @@ export default function HomePage() {
                 </Link>
               </div>
 
-              <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                {upcomingTournaments.map((t) => (
-                  <Link href="/kalendarz" key={t.id}>
-                    <Card className="hover:border-brand transition-colors cursor-pointer group overflow-hidden border-border/60">
-                      <div className="relative h-32 overflow-hidden">
-                        <Image
-                          src={`https://picsum.photos/seed/tennis-tour-${t.id}/600/300`}
-                          alt={t.name}
-                          fill
-                          className="object-cover group-hover:scale-105 transition-transform duration-500"
-                        />
-                        <div
-                          className="absolute inset-0"
-                          style={{ background: "linear-gradient(to top, rgba(15,42,27,0.7) 20%, transparent)" }}
-                        />
-                        <div className="absolute top-2 left-2 flex gap-1.5">
-                          <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${categoryColors[t.category]}`}>
-                            {t.category}
-                          </span>
-                        </div>
-                      </div>
-                      <CardContent className="p-3">
-                        <div className="flex items-start justify-between gap-2">
-                          <div>
-                            <h3 className="font-semibold text-sm">{t.flag} {t.name}</h3>
-                            <p className="text-xs text-muted-foreground">{t.location}, {t.country}</p>
+              {upcomingTournaments.length > 0 ? (
+                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+                  {upcomingTournaments.map((t) => (
+                    <Link href="/kalendarz" key={t.id}>
+                      <Card className="hover:border-brand transition-colors cursor-pointer group overflow-hidden border-border/60">
+                        <div className="relative h-32 overflow-hidden">
+                          <Image
+                            src={`https://picsum.photos/seed/tennis-tour-${t.id}/600/300`}
+                            alt={t.name}
+                            fill
+                            className="object-cover group-hover:scale-105 transition-transform duration-500"
+                          />
+                          <div
+                            className="absolute inset-0"
+                            style={{ background: "linear-gradient(to top, rgba(15,42,27,0.7) 20%, transparent)" }}
+                          />
+                          <div className="absolute top-2 left-2 flex gap-1.5">
+                            <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${categoryColors[t.category]}`}>
+                              {t.category}
+                            </span>
                           </div>
-                          <span className={`text-xs font-medium px-2 py-0.5 rounded border flex-shrink-0 ${surfaceColors[t.surface]}`}>
-                            {t.surface}
-                          </span>
                         </div>
-                        <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
-                          <CalendarDays className="h-3 w-3" />
-                          <span>
-                            {new Date(t.startDate).toLocaleDateString("pl-PL", { day: "numeric", month: "short" })}
-                            {" – "}
-                            {new Date(t.endDate).toLocaleDateString("pl-PL", { day: "numeric", month: "short" })}
-                          </span>
-                        </div>
-                      </CardContent>
-                    </Card>
-                  </Link>
-                ))}
-              </div>
+                        <CardContent className="p-3">
+                          <div className="flex items-start justify-between gap-2">
+                            <div>
+                              <h3 className="font-semibold text-sm">{t.flag} {t.name}</h3>
+                              <p className="text-xs text-muted-foreground">{t.location}</p>
+                            </div>
+                            <span className={`text-xs font-medium px-2 py-0.5 rounded border flex-shrink-0 ${surfaceColors[t.surface]}`}>
+                              {t.surface}
+                            </span>
+                          </div>
+                          <div className="flex items-center gap-1.5 mt-2 text-xs text-muted-foreground">
+                            <CalendarDays className="h-3 w-3" />
+                            <span>
+                              {new Date(t.startDate + "T12:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "short" })}
+                              {" – "}
+                              {new Date(t.endDate + "T12:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "short" })}
+                            </span>
+                          </div>
+                        </CardContent>
+                      </Card>
+                    </Link>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Brak nadchodzących turniejów.</p>
+              )}
             </section>
           </div>
 
-          {/* ── Right Sidebar ── */}
+          {/* ── Right Sidebar: Rankings ── */}
           <div className="space-y-8 anim-fade-up anim-delay-3">
-            {/* ATP Ranking Mini */}
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold flex items-center gap-2" style={{ color: "var(--brand)" }}>
@@ -355,43 +360,36 @@ export default function HomePage() {
                   Pełny ranking
                 </Link>
               </div>
-              <div className="space-y-1">
-                {atpPlayers.slice(0, 8).map((player) => (
-                  <div
-                    key={player.rank}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
-                      player.rank <= 3
-                        ? "bg-muted/50"
-                        : "hover:bg-muted/30 transition-colors"
-                    }`}
-                  >
-                    <span
-                      className={`w-6 text-center font-bold text-xs flex-shrink-0 ${
-                        player.rank === 1
-                          ? "text-yellow-500"
-                          : player.rank === 2
-                          ? "text-slate-400"
-                          : player.rank === 3
-                          ? "text-amber-600"
-                          : "text-muted-foreground"
+              {atpPlayers.length > 0 ? (
+                <div className="space-y-1">
+                  {atpPlayers.slice(0, 8).map((player) => (
+                    <div
+                      key={player.rank}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                        player.rank <= 3 ? "bg-muted/50" : "hover:bg-muted/30 transition-colors"
                       }`}
                     >
-                      {player.rank}
-                    </span>
-                    <span className="flex-1 font-medium truncate">
-                      {player.flag} {player.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {player.points.toLocaleString("pl-PL")}
-                    </span>
-                    <PointsDiff diff={player.pointsDiff} />
-                  </div>
-                ))}
-              </div>
+                      <span
+                        className={`w-6 text-center font-bold text-xs flex-shrink-0 ${
+                          player.rank === 1 ? "text-yellow-500" :
+                          player.rank === 2 ? "text-slate-400" :
+                          player.rank === 3 ? "text-amber-600" : "text-muted-foreground"
+                        }`}
+                      >
+                        {player.rank}
+                      </span>
+                      <span className="flex-1 font-medium truncate">{player.flag} {player.name}</span>
+                      <span className="text-xs text-muted-foreground">{player.points.toLocaleString("pl-PL")}</span>
+                      <PointsDiff diff={player.pointsDiff} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Brak danych rankingowych.</p>
+              )}
               <Separator className="my-4" />
             </section>
 
-            {/* WTA Ranking Mini */}
             <section>
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-base font-bold flex items-center gap-2" style={{ color: "var(--brand)" }}>
@@ -406,39 +404,33 @@ export default function HomePage() {
                   Pełny ranking
                 </Link>
               </div>
-              <div className="space-y-1">
-                {wtaPlayers.slice(0, 8).map((player) => (
-                  <div
-                    key={player.rank}
-                    className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
-                      player.rank <= 3
-                        ? "bg-muted/50"
-                        : "hover:bg-muted/30 transition-colors"
-                    }`}
-                  >
-                    <span
-                      className={`w-6 text-center font-bold text-xs flex-shrink-0 ${
-                        player.rank === 1
-                          ? "text-yellow-500"
-                          : player.rank === 2
-                          ? "text-slate-400"
-                          : player.rank === 3
-                          ? "text-amber-600"
-                          : "text-muted-foreground"
+              {wtaPlayers.length > 0 ? (
+                <div className="space-y-1">
+                  {wtaPlayers.slice(0, 8).map((player) => (
+                    <div
+                      key={player.rank}
+                      className={`flex items-center gap-3 px-3 py-2 rounded-lg text-sm ${
+                        player.rank <= 3 ? "bg-muted/50" : "hover:bg-muted/30 transition-colors"
                       }`}
                     >
-                      {player.rank}
-                    </span>
-                    <span className="flex-1 font-medium truncate">
-                      {player.flag} {player.name}
-                    </span>
-                    <span className="text-xs text-muted-foreground">
-                      {player.points.toLocaleString("pl-PL")}
-                    </span>
-                    <PointsDiff diff={player.pointsDiff} />
-                  </div>
-                ))}
-              </div>
+                      <span
+                        className={`w-6 text-center font-bold text-xs flex-shrink-0 ${
+                          player.rank === 1 ? "text-yellow-500" :
+                          player.rank === 2 ? "text-slate-400" :
+                          player.rank === 3 ? "text-amber-600" : "text-muted-foreground"
+                        }`}
+                      >
+                        {player.rank}
+                      </span>
+                      <span className="flex-1 font-medium truncate">{player.flag} {player.name}</span>
+                      <span className="text-xs text-muted-foreground">{player.points.toLocaleString("pl-PL")}</span>
+                      <PointsDiff diff={player.pointsDiff} />
+                    </div>
+                  ))}
+                </div>
+              ) : (
+                <p className="text-sm text-muted-foreground">Brak danych rankingowych.</p>
+              )}
             </section>
           </div>
         </div>
