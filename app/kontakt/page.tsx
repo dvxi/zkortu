@@ -1,31 +1,7 @@
-"use client";
-
-import { useState } from "react";
-import { Input } from "@/components/ui/input";
-import { Textarea } from "@/components/ui/textarea";
-import { Button } from "@/components/ui/button";
+import { Mail, MapPin, Phone } from "lucide-react";
 import { Separator } from "@/components/ui/separator";
-import {
-  Mail,
-  MapPin,
-  Phone,
-  CheckCircle2,
-  Send,
-  Newspaper,
-  Bug,
-  HelpCircle,
-  Handshake,
-  ChevronDown,
-  ChevronUp,
-} from "lucide-react";
-
-// ── Subject cards ─────────────────────────────────────────────────────────────
-const subjects = [
-  { value: "general", label: "Ogólne zapytanie", icon: HelpCircle, desc: "Pytania i sugestie" },
-  { value: "news", label: "Redakcja", icon: Newspaper, desc: "Aktualności i treści" },
-  { value: "bug", label: "Błąd / usterka", icon: Bug, desc: "Zgłoś problem" },
-  { value: "partnership", label: "Współpraca", icon: Handshake, desc: "Reklama / partnerstwo" },
-];
+import { getSiteSettings, type SiteSettings } from "@/lib/sanity";
+import KontaktForm from "./KontaktForm";
 
 // ── Social icon SVGs ──────────────────────────────────────────────────────────
 function IconX() {
@@ -50,78 +26,48 @@ function IconInstagram() {
   );
 }
 
-// ── FAQ data ──────────────────────────────────────────────────────────────────
-const faqs = [
-  {
-    q: "Jak szybko odpisujecie?",
-    a: "Odpowiadamy na wszystkie wiadomości w ciągu 1–2 dni roboczych. Pilne sprawy (błędy, awarie) staramy się obsłużyć w dniu zgłoszenia.",
-  },
-  {
-    q: "Jak zgłosić błąd w wynikach lub rankingach?",
-    a: "Wybierz temat \u201eBłąd / usterka\u201d i podaj jak najwięcej szczegółów \u2014 nazwę meczu, zawodnika lub stronę. Potwierdzamy każde zgłoszenie.",
-  },
-  {
-    q: "Czy można zamieścić artykuł lub materiał zewnętrzny?",
-    a: "Tak, akceptujemy propozycje artyku\u0142\u00f3w go\u015bcinnych i wywiady. Napisz do nas przez formularz z tematem Redakcja, opisuj\u0105c sw\u00f3j pomys\u0142.",
-  },
-  {
-    q: "Jak nawi\u0105za\u0107 wsp\u00f3\u0142prac\u0119 reklamow\u0105?",
-    a: "Mamy dedykowan\u0105 ofert\u0119 dla partner\u00f3w \u2014 banery, artyku\u0142y sponsorowane, patronaty turniej\u00f3w. Wybierz temat Wsp\u00f3\u0142praca \u2014 odezwiemy si\u0119 z mediakit.",
-  },
-];
+// ── Defaults (used when Sanity document doesn't exist yet) ────────────────────
+const DEFAULT: Required<SiteSettings> = {
+  email: "kontakt@zkortu.pl",
+  phone: "+48 123 456 789",
+  address: "ul. Kortowa 1\n00-001 Warszawa",
+  twitter: "https://twitter.com",
+  facebook: "https://facebook.com",
+  instagram: "https://instagram.com",
+  officeHours: [
+    { day: "Poniedziałek – piątek", hours: "9:00 – 18:00", isOpen: true },
+    { day: "Sobota", hours: "10:00 – 15:00", isOpen: true },
+    { day: "Niedziela", hours: "Zamknięte", isOpen: false },
+  ],
+  responseTime: "1–2 dni",
+  footerDescription: "Twój portal tenisowy — wyniki na żywo, rankingi ATP i WTA, aktualności, kalendarz turniejów i wideo ze świata tenisa.",
+  faqs: [
+    { question: "Jak szybko odpisujecie?", answer: "Odpowiadamy na wszystkie wiadomości w ciągu 1–2 dni roboczych. Pilne sprawy (błędy, awarie) staramy się obsłużyć w dniu zgłoszenia." },
+    { question: "Jak zgłosić błąd w wynikach lub rankingach?", answer: "Wybierz temat 'Błąd / usterka' i podaj jak najwięcej szczegółów — nazwę meczu, zawodnika lub stronę. Potwierdzamy każde zgłoszenie." },
+    { question: "Czy można zamieścić artykuł lub materiał zewnętrzny?", answer: "Tak, akceptujemy propozycje artykułów gościnnych i wywiady. Napisz do nas przez formularz z tematem Redakcja, opisując swój pomysł." },
+    { question: "Jak nawiązać współpracę reklamową?", answer: "Mamy dedykowaną ofertę dla partnerów — banery, artykuły sponsorowane, patronaty turniejów. Wybierz temat Współpraca — odezwiemy się z mediakit." },
+  ],
+};
 
-// ── Character counter helper ──────────────────────────────────────────────────
-const MAX_MESSAGE = 1200;
+export default async function KontaktPage() {
+  const raw = await getSiteSettings();
+  const s: Required<SiteSettings> = { ...DEFAULT, ...raw };
 
-// ── Component ─────────────────────────────────────────────────────────────────
-export default function KontaktPage() {
-  const [submitted, setSubmitted] = useState(false);
-  const [loading, setLoading] = useState(false);
-  const [errors, setErrors] = useState<Partial<Record<string, string>>>({});
-  const [openFaq, setOpenFaq] = useState<number | null>(null);
-  const [form, setForm] = useState({ name: "", email: "", subject: "", message: "" });
+  const contactItems = [
+    { icon: Mail, label: "E-mail", value: s.email, href: `mailto:${s.email}` },
+    { icon: Phone, label: "Telefon", value: s.phone, href: s.phone ? `tel:${s.phone.replace(/\s/g, "")}` : null },
+    { icon: MapPin, label: "Adres", value: s.address, href: null },
+  ].filter(item => item.value);
 
-  function validate() {
-    const e: typeof errors = {};
-    if (!form.name.trim()) e.name = "Podaj imię i nazwisko";
-    if (!form.email.trim()) e.email = "Podaj adres e-mail";
-    else if (!/\S+@\S+\.\S+/.test(form.email)) e.email = "Nieprawidłowy adres e-mail";
-    if (!form.subject) e.subject = "Wybierz temat wiadomości";
-    if (!form.message.trim()) e.message = "Wpisz treść wiadomości";
-    else if (form.message.trim().length < 10) e.message = "Wiadomość jest za krótka";
-    return e;
-  }
-
-  async function handleSubmit(e: React.FormEvent) {
-    e.preventDefault();
-    const errs = validate();
-    if (Object.keys(errs).length) { setErrors(errs); return; }
-    setErrors({});
-    setLoading(true);
-    try {
-      const res = await fetch("/api/contact", {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify(form),
-      });
-      if (!res.ok) {
-        const data = await res.json().catch(() => ({}));
-        setErrors({ message: data.error || "Nie udało się wysłać wiadomości. Spróbuj ponownie." });
-        return;
-      }
-      setSubmitted(true);
-    } catch {
-      setErrors({ message: "Błąd sieci. Sprawdź połączenie i spróbuj ponownie." });
-    } finally {
-      setLoading(false);
-    }
-  }
-
-  const msgLen = form.message.length;
+  const socialLinks = [
+    { Icon: IconX, href: s.twitter, label: "X / Twitter" },
+    { Icon: IconFacebook, href: s.facebook, label: "Facebook" },
+    { Icon: IconInstagram, href: s.instagram, label: "Instagram" },
+  ].filter(item => item.href);
 
   return (
     <>
-      {/* ── Hero strip ──────────────────────────────────────────────────────── */}
+      {/* Hero */}
       <section
         className="relative py-14 px-4 sm:px-6 overflow-hidden"
         style={{ backgroundColor: "var(--brand)" }}
@@ -143,191 +89,21 @@ export default function KontaktPage() {
             Kontakt
           </h1>
           <p className="anim-fade-up anim-delay-2 text-white/65 text-lg max-w-lg">
-            Masz pytanie, sugestię lub chcesz nawiązać współpracę? Odpiszemy w ciągu 1–2 dni roboczych.
+            Masz pytanie, sugestię lub chcesz nawiązać współpracę? Odpiszemy w ciągu {s.responseTime}.
           </p>
         </div>
       </section>
 
-      {/* ── Main content ────────────────────────────────────────────────────── */}
+      {/* Main content */}
       <div className="max-w-7xl mx-auto px-4 sm:px-6 py-12">
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-10">
 
-          {/* ── Left: form ────────────────────────────────────────────────── */}
+          {/* Left: form + FAQ */}
           <div className="lg:col-span-2">
-            {submitted ? (
-              <div className="anim-fade-up flex flex-col items-center justify-center py-20 text-center bg-card rounded-2xl border border-border">
-                <div
-                  className="w-16 h-16 rounded-full flex items-center justify-center mb-5"
-                  style={{ backgroundColor: "oklch(0.92 0.05 155)" }}
-                >
-                  <CheckCircle2 className="h-8 w-8" style={{ color: "var(--brand)" }} />
-                </div>
-                <h2 className="text-2xl font-bold mb-2" style={{ color: "var(--brand)" }}>
-                  Wiadomość wysłana!
-                </h2>
-                <p className="text-muted-foreground max-w-sm text-sm">
-                  Dziękujemy za kontakt. Odpiszemy na Twój adres e-mail w ciągu 1–2 dni roboczych.
-                </p>
-                <button
-                  onClick={() => { setSubmitted(false); setForm({ name: "", email: "", subject: "", message: "" }); }}
-                  className="mt-6 text-sm font-semibold px-5 py-2.5 rounded-lg border border-border hover:bg-muted transition-colors"
-                >
-                  Wyślij kolejną wiadomość
-                </button>
-              </div>
-            ) : (
-              <form
-                onSubmit={handleSubmit}
-                noValidate
-                className="bg-card rounded-2xl border border-border p-6 sm:p-8 space-y-6"
-              >
-                <div>
-                  <h2 className="text-lg font-bold mb-0.5" style={{ color: "var(--brand)" }}>
-                    Formularz kontaktowy
-                  </h2>
-                  <p className="text-sm text-muted-foreground">Wypełnij pola i wyślij wiadomość.</p>
-                </div>
-
-                {/* Name + Email */}
-                <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium" htmlFor="name">
-                      Imię i nazwisko <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      id="name"
-                      placeholder="Jan Kowalski"
-                      value={form.name}
-                      onChange={(e) => { setForm({ ...form, name: e.target.value }); if (errors.name) setErrors({ ...errors, name: undefined }); }}
-                      className={errors.name ? "border-red-400 focus-visible:ring-red-400" : ""}
-                    />
-                    {errors.name && <p className="text-xs text-red-500">{errors.name}</p>}
-                  </div>
-                  <div className="space-y-1.5">
-                    <label className="text-sm font-medium" htmlFor="email">
-                      Adres e-mail <span className="text-red-500">*</span>
-                    </label>
-                    <Input
-                      id="email"
-                      type="email"
-                      placeholder="jan@example.com"
-                      value={form.email}
-                      onChange={(e) => { setForm({ ...form, email: e.target.value }); if (errors.email) setErrors({ ...errors, email: undefined }); }}
-                      className={errors.email ? "border-red-400 focus-visible:ring-red-400" : ""}
-                    />
-                    {errors.email && <p className="text-xs text-red-500">{errors.email}</p>}
-                  </div>
-                </div>
-
-                {/* Subject — visual cards */}
-                <div className="space-y-2">
-                  <label className="text-sm font-medium">
-                    Temat <span className="text-red-500">*</span>
-                  </label>
-                  <div className="grid grid-cols-2 sm:grid-cols-4 gap-2">
-                    {subjects.map(({ value, label, icon: Icon, desc }) => {
-                      const active = form.subject === value;
-                      return (
-                        <button
-                          type="button"
-                          key={value}
-                          onClick={() => { setForm({ ...form, subject: value }); if (errors.subject) setErrors({ ...errors, subject: undefined }); }}
-                          className={`flex flex-col items-start gap-1 p-3 rounded-xl border text-left transition-all ${
-                            active
-                              ? "border-transparent text-white"
-                              : "border-border hover:border-border/80 hover:bg-muted/30"
-                          }`}
-                          style={active ? { backgroundColor: "var(--brand)" } : {}}
-                        >
-                          <Icon className={`h-4 w-4 ${active ? "text-white/80" : "text-muted-foreground"}`} />
-                          <span className={`text-xs font-bold ${active ? "text-white" : "text-foreground"}`}>{label}</span>
-                          <span className={`text-[11px] ${active ? "text-white/60" : "text-muted-foreground"}`}>{desc}</span>
-                        </button>
-                      );
-                    })}
-                  </div>
-                  {errors.subject && <p className="text-xs text-red-500">{errors.subject}</p>}
-                </div>
-
-                {/* Message */}
-                <div className="space-y-1.5">
-                  <div className="flex items-center justify-between">
-                    <label className="text-sm font-medium" htmlFor="message">
-                      Wiadomość <span className="text-red-500">*</span>
-                    </label>
-                    <span className={`text-xs tabular-nums ${msgLen > MAX_MESSAGE ? "text-red-500 font-semibold" : "text-muted-foreground"}`}>
-                      {msgLen} / {MAX_MESSAGE}
-                    </span>
-                  </div>
-                  <Textarea
-                    id="message"
-                    placeholder="Opisz swoje zapytanie lub sugestię..."
-                    className={`min-h-40 resize-y ${errors.message ? "border-red-400 focus-visible:ring-red-400" : ""}`}
-                    value={form.message}
-                    maxLength={MAX_MESSAGE}
-                    onChange={(e) => { setForm({ ...form, message: e.target.value }); if (errors.message) setErrors({ ...errors, message: undefined }); }}
-                  />
-                  {errors.message && <p className="text-xs text-red-500">{errors.message}</p>}
-                </div>
-
-                {/* Submit */}
-                <div className="flex items-center gap-4 pt-1">
-                  <Button
-                    type="submit"
-                    disabled={loading || msgLen > MAX_MESSAGE}
-                    className="px-7 py-2.5 font-semibold text-sm transition-all hover:opacity-90 hover:scale-[1.02] active:scale-[0.98]"
-                    style={{ backgroundColor: "var(--brand)", color: "white" }}
-                  >
-                    {loading ? (
-                      <span className="flex items-center gap-2">
-                        <span className="w-4 h-4 border-2 border-white/40 border-t-white rounded-full animate-spin" />
-                        Wysyłanie…
-                      </span>
-                    ) : (
-                      <span className="flex items-center gap-2">
-                        <Send className="h-4 w-4" />
-                        Wyślij wiadomość
-                      </span>
-                    )}
-                  </Button>
-                  <p className="text-xs text-muted-foreground hidden sm:block">
-                    Odpowiadamy w ciągu 1–2 dni roboczych
-                  </p>
-                </div>
-              </form>
-            )}
-
-            {/* ── FAQ ───────────────────────────────────────────────────── */}
-            <div className="mt-10">
-              <h2 className="text-xl font-bold mb-5" style={{ color: "var(--brand)" }}>
-                Często zadawane pytania
-              </h2>
-              <div className="space-y-2">
-                {faqs.map((faq, i) => {
-                  const open = openFaq === i;
-                  return (
-                    <div key={i} className="rounded-xl border border-border overflow-hidden bg-card">
-                      <button
-                        type="button"
-                        onClick={() => setOpenFaq(open ? null : i)}
-                        className="w-full flex items-center justify-between gap-3 px-5 py-4 text-left hover:bg-muted/30 transition-colors"
-                      >
-                        <span className="font-semibold text-sm">{faq.q}</span>
-                        {open ? <ChevronUp className="h-4 w-4 flex-shrink-0 text-muted-foreground" /> : <ChevronDown className="h-4 w-4 flex-shrink-0 text-muted-foreground" />}
-                      </button>
-                      {open && (
-                        <div className="anim-switch px-5 pb-4 text-sm text-muted-foreground leading-relaxed border-t border-border pt-3">
-                          {faq.a}
-                        </div>
-                      )}
-                    </div>
-                  );
-                })}
-              </div>
-            </div>
+            <KontaktForm faqs={s.faqs ?? []} />
           </div>
 
-          {/* ── Right sidebar ─────────────────────────────────────────────── */}
+          {/* Right: sidebar */}
           <div className="space-y-5">
 
             {/* Contact details */}
@@ -336,11 +112,7 @@ export default function KontaktPage() {
                 <h2 className="font-bold text-white text-sm">Dane kontaktowe</h2>
               </div>
               <div className="p-5 space-y-4">
-                {[
-                  { icon: Mail, label: "E-mail", value: "kontakt@zkortu.pl", href: "mailto:kontakt@zkortu.pl" },
-                  { icon: Phone, label: "Telefon", value: "+48 123 456 789", href: "tel:+48123456789" },
-                  { icon: MapPin, label: "Adres", value: "ul. Kortowa 1\n00-001 Warszawa", href: null },
-                ].map(({ icon: Icon, label, value, href }) => (
+                {contactItems.map(({ icon: Icon, label, value, href }) => (
                   <div key={label} className="flex items-start gap-3">
                     <div
                       className="w-9 h-9 rounded-xl flex items-center justify-center flex-shrink-0"
@@ -361,59 +133,53 @@ export default function KontaktPage() {
                   </div>
                 ))}
 
-                <Separator />
-
-                <div>
-                  <p className="text-xs text-muted-foreground mb-3">Śledź nas</p>
-                  <div className="flex items-center gap-2">
-                    {[
-                      { Icon: IconX, href: "https://twitter.com", label: "X / Twitter" },
-                      { Icon: IconFacebook, href: "https://facebook.com", label: "Facebook" },
-                      { Icon: IconInstagram, href: "https://instagram.com", label: "Instagram" },
-                    ].map(({ Icon, href, label }) => (
-                      <a
-                        key={label}
-                        href={href}
-                        target="_blank"
-                        rel="noopener noreferrer"
-                        aria-label={label}
-                        className="w-9 h-9 rounded-xl border border-border flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground"
-                      >
-                        <Icon />
-                      </a>
-                    ))}
-                  </div>
-                </div>
+                {socialLinks.length > 0 && (
+                  <>
+                    <Separator />
+                    <div>
+                      <p className="text-xs text-muted-foreground mb-3">Śledź nas</p>
+                      <div className="flex items-center gap-2">
+                        {socialLinks.map(({ Icon, href, label }) => (
+                          <a
+                            key={label}
+                            href={href!}
+                            target="_blank"
+                            rel="noopener noreferrer"
+                            aria-label={label}
+                            className="w-9 h-9 rounded-xl border border-border flex items-center justify-center hover:bg-muted transition-colors text-muted-foreground"
+                          >
+                            <Icon />
+                          </a>
+                        ))}
+                      </div>
+                    </div>
+                  </>
+                )}
               </div>
             </div>
 
             {/* Office hours */}
-            <div className="rounded-2xl border border-border bg-card">
-              <div className="px-5 py-4 border-b border-border" style={{ backgroundColor: "var(--brand)" }}>
-                <h3 className="font-bold text-white text-sm">Godziny pracy redakcji</h3>
+            {s.officeHours && s.officeHours.length > 0 && (
+              <div className="rounded-2xl border border-border bg-card">
+                <div className="px-5 py-4 border-b border-border" style={{ backgroundColor: "var(--brand)" }}>
+                  <h3 className="font-bold text-white text-sm">Godziny pracy redakcji</h3>
+                </div>
+                <div className="p-5 space-y-2.5 text-sm">
+                  {s.officeHours.map(({ day, hours, isOpen }) => (
+                    <div key={day} className="flex items-center justify-between">
+                      <span className="text-muted-foreground">{day}</span>
+                      <span className={`font-semibold text-xs px-2 py-0.5 rounded-full ${isOpen ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
+                        {hours}
+                      </span>
+                    </div>
+                  ))}
+                </div>
               </div>
-              <div className="p-5 space-y-2.5 text-sm">
-                {[
-                  { day: "Poniedziałek – piątek", hours: "9:00 – 18:00", open: true },
-                  { day: "Sobota", hours: "10:00 – 15:00", open: true },
-                  { day: "Niedziela", hours: "Zamknięte", open: false },
-                ].map(({ day, hours, open }) => (
-                  <div key={day} className="flex items-center justify-between">
-                    <span className="text-muted-foreground">{day}</span>
-                    <span className={`font-semibold text-xs px-2 py-0.5 rounded-full ${open ? "bg-green-100 text-green-700" : "bg-muted text-muted-foreground"}`}>
-                      {hours}
-                    </span>
-                  </div>
-                ))}
-              </div>
-            </div>
+            )}
 
-            {/* Response time SLA */}
-            <div
-              className="rounded-2xl p-5"
-              style={{ backgroundColor: "var(--brand)" }}
-            >
-              <p className="font-black text-2xl mb-1 text-white">1–2 dni</p>
+            {/* Response time */}
+            <div className="rounded-2xl p-5" style={{ backgroundColor: "var(--brand)" }}>
+              <p className="font-black text-2xl mb-1 text-white">{s.responseTime}</p>
               <p className="text-sm font-semibold text-white/80">Czas odpowiedzi</p>
               <p className="text-xs mt-1.5 text-white/50">
                 Na każdą wiadomość odpowiadamy indywidualnie.

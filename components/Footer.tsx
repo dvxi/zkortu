@@ -1,5 +1,6 @@
 import Link from "next/link";
 import { Separator } from "@/components/ui/separator";
+import { getSiteSettings } from "@/lib/sanity";
 
 const footerLinks = {
   "Tenis": [
@@ -15,7 +16,25 @@ const footerLinks = {
   ],
 };
 
-export default function Footer() {
+const DEFAULT_DESCRIPTION = "Twój portal tenisowy — wyniki na żywo, rankingi ATP i WTA, aktualności, kalendarz turniejów i wideo ze świata tenisa.";
+const DEFAULT_SOCIAL = [
+  { href: "https://twitter.com", label: "Twitter / X" },
+  { href: "https://facebook.com", label: "Facebook" },
+  { href: "https://instagram.com", label: "Instagram" },
+];
+
+export default async function Footer() {
+  const settings = await getSiteSettings();
+
+  const description = settings?.footerDescription || DEFAULT_DESCRIPTION;
+  const social = [
+    settings?.twitter && { href: settings.twitter, label: "Twitter / X" },
+    settings?.facebook && { href: settings.facebook, label: "Facebook" },
+    settings?.instagram && { href: settings.instagram, label: "Instagram" },
+  ].filter(Boolean) as typeof DEFAULT_SOCIAL;
+
+  const socialLinks = social.length > 0 ? social : DEFAULT_SOCIAL;
+
   return (
     <footer style={{ backgroundColor: "var(--brand)" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 pb-8">
@@ -27,15 +46,10 @@ export default function Footer() {
               <span className="text-white/35 text-sm font-normal">.pl</span>
             </div>
             <p className="text-white/60 text-sm leading-relaxed max-w-xs">
-              Twój portal tenisowy — wyniki na żywo, rankingi ATP i WTA,
-              aktualności, kalendarz turniejów i wideo ze świata tenisa.
+              {description}
             </p>
             <div className="flex items-center gap-4 mt-6">
-              {[
-                { href: "https://twitter.com", label: "Twitter / X" },
-                { href: "https://facebook.com", label: "Facebook" },
-                { href: "https://instagram.com", label: "Instagram" },
-              ].map(({ href, label }) => (
+              {socialLinks.map(({ href, label }) => (
                 <a
                   key={label}
                   href={href}

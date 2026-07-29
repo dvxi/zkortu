@@ -175,3 +175,36 @@ export async function getAllVideos(): Promise<SanityVideo[]> {
     return [];
   }
 }
+
+// ── Site Settings ─────────────────────────────────────────────────────────────
+
+export interface SiteSettings {
+  email?: string;
+  phone?: string;
+  address?: string;
+  twitter?: string;
+  facebook?: string;
+  instagram?: string;
+  officeHours?: Array<{ day: string; hours: string; isOpen: boolean }>;
+  responseTime?: string;
+  footerDescription?: string;
+  faqs?: Array<{ question: string; answer: string }>;
+}
+
+export async function getSiteSettings(): Promise<SiteSettings | null> {
+  if (!isSanityConfigured()) return null;
+  try {
+    return await getClient().fetch<SiteSettings | null>(
+      `*[_type == "siteSettings"][0] {
+        email, phone, address,
+        twitter, facebook, instagram,
+        officeHours[] { day, hours, isOpen },
+        responseTime, footerDescription,
+        faqs[] { question, answer }
+      }`,
+    );
+  } catch (err) {
+    console.error("Sanity getSiteSettings error:", err);
+    return null;
+  }
+}
