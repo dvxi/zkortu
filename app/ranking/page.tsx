@@ -149,12 +149,16 @@ const rankingTypes = [
 export default function RankingPage() {
   const [tour, setTour] = useState<"atp" | "wta">("atp");
   const [rankType, setRankType] = useState<"main" | "live" | "race">("main");
-  const [atpData, setAtpData] = useState<Player[]>(atpPlayers);
-  const [wtaData, setWtaData] = useState<Player[]>(wtaPlayers);
+  const [atpData, setAtpData] = useState<Player[]>([]);
+  const [wtaData, setWtaData] = useState<Player[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
-    loadRankings("ATP").then(d => { if (d.length) setAtpData(d); });
-    loadRankings("WTA").then(d => { if (d.length) setWtaData(d); });
+    Promise.all([loadRankings("ATP"), loadRankings("WTA")]).then(([atp, wta]) => {
+      setAtpData(atp);
+      setWtaData(wta);
+      setLoading(false);
+    });
   }, []);
 
   const players = tour === "atp" ? atpData : wtaData;
@@ -236,7 +240,21 @@ export default function RankingPage() {
 
       {/* Table */}
       <div key={`${tour}-${rankType}`} className="anim-switch">
-        <RankingTable players={players} variant={rankType} />
+        {loading ? (
+          <div className="rounded-xl overflow-hidden border border-border">
+            {Array.from({ length: 10 }).map((_, i) => (
+              <div key={i} className="flex items-center gap-4 px-4 py-3 border-t border-border animate-pulse">
+                <div className="w-6 h-4 bg-muted rounded" />
+                <div className="flex-1 h-4 bg-muted rounded" />
+                <div className="w-20 h-4 bg-muted rounded hidden sm:block" />
+                <div className="w-16 h-4 bg-muted rounded" />
+                <div className="w-10 h-4 bg-muted rounded hidden sm:block" />
+              </div>
+            ))}
+          </div>
+        ) : (
+          <RankingTable players={players} variant={rankType} />
+        )}
       </div>
 
       {/* Last updated info */}

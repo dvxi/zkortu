@@ -38,7 +38,8 @@ export default function AktualnosciPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Wszystkie");
   const [tab, setTab] = useState("wszystkie");
-  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>(mockArticles);
+  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
+  const [loading, setLoading] = useState(true);
 
   useEffect(() => {
     fetch("/api/articles")
@@ -48,8 +49,12 @@ export default function AktualnosciPage() {
         const data = await r.json();
         return Array.isArray(data) && data.length > 0 ? data : null;
       })
-      .then((d: NewsArticle[] | null) => { if (d) setNewsArticles(d); })
-      .catch(() => {});
+      .then((d: NewsArticle[] | null) => {
+        if (d) setNewsArticles(d);
+        else setNewsArticles(mockArticles);
+      })
+      .catch(() => { setNewsArticles(mockArticles); })
+      .finally(() => setLoading(false));
   }, []);
 
   const todayStr = new Date().toISOString().slice(0, 10);
@@ -150,7 +155,21 @@ export default function AktualnosciPage() {
       </div>
 
       {/* Articles grouped by date */}
-      {sortedDates.length === 0 ? (
+      {loading ? (
+        <div className="space-y-6 max-w-4xl mx-auto px-4 sm:px-6">
+          {Array.from({ length: 4 }).map((_, i) => (
+            <div key={i} className="flex gap-4 animate-pulse">
+              <div className="w-28 h-20 rounded-lg bg-muted flex-shrink-0" />
+              <div className="flex-1 space-y-2 py-1">
+                <div className="h-3 bg-muted rounded w-16" />
+                <div className="h-4 bg-muted rounded w-full" />
+                <div className="h-4 bg-muted rounded w-3/4" />
+                <div className="h-3 bg-muted rounded w-12" />
+              </div>
+            </div>
+          ))}
+        </div>
+      ) : sortedDates.length === 0 ? (
         <div key={`empty-${tab}-${category}`} className="anim-switch text-center py-20 text-muted-foreground">
           Nie znaleziono artykułów spełniających kryteria.
         </div>

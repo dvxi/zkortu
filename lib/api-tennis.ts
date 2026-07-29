@@ -251,14 +251,16 @@ export async function fetchLiveScores(): Promise<LiveMatch[]> {
 export async function fetchTournaments(): Promise<Tournament[]> {
   const raw = await apiFetch<RawTournament>({ method: "get_tournaments" }, 3600);
 
-  const now = "2026-07-29";
+  const now = new Date().toISOString().slice(0, 10);
 
-  return raw.slice(0, 12).map((t, i) => {
-    const start = t.start_date ?? now;
-    const end = t.end_date ?? now;
+  return raw.slice(0, 24).map((t, i) => {
+    const start = t.start_date ?? "";
+    const end = t.end_date ?? "";
     let status: Tournament["status"] = "upcoming";
-    if (end < now) status = "completed";
-    else if (start <= now) status = "live";
+    if (start && end) {
+      if (end < now) status = "completed";
+      else if (start <= now) status = "live";
+    }
 
     return {
       id: t.tournament_key || `t${i}`,

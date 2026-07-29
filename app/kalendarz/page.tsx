@@ -616,15 +616,6 @@ export default function KalendarzPage() {
               </SheetHeader>
 
               <div className="px-4 pb-6 space-y-6">
-              <div className="relative h-48 rounded-xl overflow-hidden">
-                <Image
-                  src={`https://picsum.photos/seed/${picsumSeedMap[selectedTournament.id] ?? "tennis-tour-t1"}/700/400`}
-                  alt={selectedTournament.name}
-                  fill
-                  className="object-cover"
-                />
-              </div>
-
               <div className="grid grid-cols-2 gap-3">
                 <div className="p-3 rounded-lg bg-muted/50 border border-border">
                   <p className="text-xs text-muted-foreground mb-1">Powierzchnia</p>
@@ -643,9 +634,9 @@ export default function KalendarzPage() {
                     <CalendarDays className="h-3 w-3" /> Daty
                   </p>
                   <p className="text-sm font-semibold">
-                    {new Date(selectedTournament.startDate).toLocaleDateString("pl-PL", { day: "numeric", month: "short" })}
-                    {" – "}
-                    {new Date(selectedTournament.endDate).toLocaleDateString("pl-PL", { day: "numeric", month: "short" })}
+                    {selectedTournament.startDate
+                      ? `${new Date(selectedTournament.startDate + "T12:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "short" })} – ${new Date(selectedTournament.endDate + "T12:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "short" })}`
+                      : "—"}
                   </p>
                 </div>
                 <div className="p-3 rounded-lg bg-muted/50 border border-border">
