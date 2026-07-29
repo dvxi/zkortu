@@ -16,65 +16,9 @@ import { surfaceColors, categoryColors } from "@/lib/mock-data";
 import { fetchRankings, fetchLiveScores, fetchTournaments } from "@/lib/api-tennis";
 import { getAllArticles } from "@/lib/sanity";
 
-// Unsplash photo IDs mapped to tennis tournament locations/countries
-const TOURNAMENT_PHOTOS: Record<string, string> = {
-  // Cities
-  "Sao Paulo": "1483729558449-99ef3d592be6", // Brazil urban
-  "Brazil": "1483729558449-99ef3d592be6",
-  "Paris": "1502602898657-3e91760cbb34",      // Eiffel Tower
-  "France": "1502602898657-3e91760cbb34",
-  "London": "1513635269975-59663e0ac1ad",     // London skyline
-  "United Kingdom": "1513635269975-59663e0ac1ad",
-  "New York": "1496442226666-8d4d0e62e6e9",   // NYC
-  "United States": "1496442226666-8d4d0e62e6e9",
-  "Melbourne": "1545580942-a0f48bc54c3e",     // Melbourne
-  "Australia": "1545580942-a0f48bc54c3e",
-  "Madrid": "1539037116277-4db20889f2d4",     // Spain
-  "Spain": "1539037116277-4db20889f2d4",
-  "Rome": "1515542622106-0b3fbe536bbd",       // Rome
-  "Italy": "1515542622106-0b3fbe536bbd",
-  "Miami": "1506929562872-bb421503ef21",      // Miami beach
-  "Toronto": "1477519242566-6ae87c31d212",    // Canada
-  "Canada": "1477519242566-6ae87c31d212",
-  "Cincinnati": "1444723121867-7a241cacace9", // USA city
-  "Shanghai": "1480095974569-02bda8e4d41c",   // Shanghai
-  "China": "1480095974569-02bda8e4d41c",
-  "Tokyo": "1540959733332-eab4deabeeaf",      // Tokyo
-  "Japan": "1540959733332-eab4deabeeaf",
-  "Dubai": "1512453979798-5ea266f8880c",      // Dubai
-  "Doha": "1512453979798-5ea266f8880c",
-  "Monte Carlo": "1583264049880-3a3bc3a7a30c", // Monaco coast
-  "Monaco": "1583264049880-3a3bc3a7a30c",
-  "Indian Wells": "1501854140801-50d01698950b", // Desert
-  "Wimbledon": "1554068865-24cecd4e34b8",     // Tennis court/grass
-  "Aachen": "1513400752-6a091dca30b5",        // German city
-  "Germany": "1513400752-6a091dca30b5",
-  "Abidjan": "1547471080-7cc2caa01a7e",       // Africa
-  "Côte d'Ivoire": "1547471080-7cc2caa01a7e",
-  "Warsaw": "1519197924294-4ba991a11128",     // Poland
-  "Poland": "1519197924294-4ba991a11128",
-  "Vienna": "1516550135131-fc13f84a60f7",     // Vienna
-  "Austria": "1516550135131-fc13f84a60f7",
-  "Basel": "1506905925346-21bda4d32df4",      // Switzerland
-  "Switzerland": "1506905925346-21bda4d32df4",
-  "Rotterdam": "1512470296520-a18f198b1b4c",  // Netherlands canal
-  "Netherlands": "1512470296520-a18f198b1b4c",
-  "Buenos Aires": "1525877442103-5ddb2089b2bb", // Argentina
-  "Argentina": "1525877442103-5ddb2089b2bb",
-  "Santiago": "1531761535209-8ab96840c7b8",   // Chile mountains
-  "Chile": "1531761535209-8ab96840c7b8",
-  "Seoul": "1542378151781-eada4e5fd7c6",      // South Korea
-  "South Korea": "1542378151781-eada4e5fd7c6",
-  "Singapore": "1525625293386-12d80c45d0b3",  // Singapore
-};
-
-const TENNIS_DEFAULT = "1554068865-24cecd4e34b8"; // Tennis court fallback
-
-function tournamentPhotoId(location: string): string {
-  for (const [key, id] of Object.entries(TOURNAMENT_PHOTOS)) {
-    if (location.toLowerCase().includes(key.toLowerCase())) return id;
-  }
-  return TENNIS_DEFAULT;
+function tournamentImageSeed(location: string): string {
+  // Normalize to a slug so each city gets a consistent unique image
+  return "tennis-city-" + location.toLowerCase().replace(/[^a-z0-9]+/g, "-").replace(/^-|-$/g, "");
 }
 
 function PointsDiff({ diff }: { diff: number }) {
@@ -361,7 +305,7 @@ export default async function HomePage() {
                       <Card className="hover:border-brand transition-colors cursor-pointer group overflow-hidden border-border/60">
                         <div className="relative h-32 overflow-hidden">
                           <Image
-                            src={`https://images.unsplash.com/photo-${tournamentPhotoId(t.location || t.country || t.name)}?w=600&h=300&fit=crop&q=80`}
+                            src={`https://picsum.photos/seed/${tournamentImageSeed(t.location || t.country || t.name)}/600/300`}
                             alt={t.name}
                             fill
                             className="object-cover group-hover:scale-105 transition-transform duration-500"
