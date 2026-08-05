@@ -1,7 +1,7 @@
 import Image from "next/image";
 import { Badge } from "@/components/ui/badge";
 import { TrendingUp, TrendingDown, Minus, Trophy, Star, CalendarDays } from "lucide-react";
-import { juniorAtpPlayers, juniorWtaPlayers, type Player } from "@/lib/mock-data";
+import type { Player } from "@/lib/mock-data";
 import { getAllJuniorPlayers, juniorToPlayer } from "@/lib/sanity";
 
 function PointsDiff({ diff }: { diff: number }) {
@@ -109,13 +109,8 @@ export default async function TenisJuniorskiPage() {
     getAllJuniorPlayers("Girls"),
   ]);
 
-  const boysPlayers: Player[] = sanityBoys.length > 0
-    ? sanityBoys.map(juniorToPlayer)
-    : juniorAtpPlayers;
-
-  const girlsPlayers: Player[] = sanityGirls.length > 0
-    ? sanityGirls.map(juniorToPlayer)
-    : juniorWtaPlayers;
+  const boysPlayers: Player[] = sanityBoys.map(juniorToPlayer);
+  const girlsPlayers: Player[] = sanityGirls.map(juniorToPlayer);
 
   const rankingDate = sanityBoys[0]?.rankingDate ?? sanityGirls[0]?.rankingDate ?? null;
 

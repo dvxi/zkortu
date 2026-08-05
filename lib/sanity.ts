@@ -1,5 +1,20 @@
 import { createClient } from "next-sanity";
+import type { PortableTextBlock } from "@portabletext/react";
 import type { NewsArticle } from "./mock-data";
+
+export interface SanityArticle {
+  id: string;
+  title: string;
+  excerpt: string;
+  category: string;
+  date: string;
+  readTime: number;
+  imageQuery?: string;
+  featured?: boolean;
+  author: string;
+  authorRole?: string;
+  content: PortableTextBlock[];
+}
 
 function isSanityConfigured() {
   return Boolean(process.env.NEXT_PUBLIC_SANITY_PROJECT_ID);
@@ -28,17 +43,13 @@ const ARTICLE_FIELDS = `
   featured,
   author,
   authorRole,
-  content[] {
-    "type": type,
-    "text": text,
-    "author": quoteAuthor
-  }
+  content
 `;
 
-export async function getAllArticles(): Promise<NewsArticle[]> {
+export async function getAllArticles(): Promise<SanityArticle[]> {
   if (!isSanityConfigured()) return [];
   try {
-    const results = await getClient().fetch<NewsArticle[]>(
+    const results = await getClient().fetch<SanityArticle[]>(
       `*[_type == "article"] | order(date desc) { ${ARTICLE_FIELDS} }`,
     );
     return Array.isArray(results) ? results : [];
@@ -48,16 +59,30 @@ export async function getAllArticles(): Promise<NewsArticle[]> {
   }
 }
 
-export async function getArticleBySlug(slug: string): Promise<NewsArticle | null> {
+export async function getArticleBySlug(slug: string): Promise<SanityArticle | null> {
   if (!isSanityConfigured()) return null;
   try {
-    return await getClient().fetch<NewsArticle | null>(
+    return await getClient().fetch<SanityArticle | null>(
       `*[_type == "article" && slug.current == $slug][0] { ${ARTICLE_FIELDS} }`,
       { slug },
     );
   } catch (err) {
     console.error("Sanity getArticleBySlug error:", err);
     return null;
+  }
+}
+
+export async function getRelatedArticles(slug: string, category: string): Promise<SanityArticle[]> {
+  if (!isSanityConfigured()) return [];
+  try {
+    const results = await getClient().fetch<SanityArticle[]>(
+      `*[_type == "article" && slug.current != $slug && category == $category] | order(date desc)[0...3] { ${ARTICLE_FIELDS} }`,
+      { slug, category },
+    );
+    return Array.isArray(results) ? results : [];
+  } catch (err) {
+    console.error("Sanity getRelatedArticles error:", err);
+    return [];
   }
 }
 

@@ -27,7 +27,36 @@ export const articleType = defineType({
       name: "content",
       title: "Treść",
       type: "array",
-      of: [{ type: "contentBlock" }],
+      of: [
+        {
+          type: "block",
+          styles: [
+            { title: "Normalny", value: "normal" },
+            { title: "Lead (wyróżniony)", value: "lead" },
+            { title: "Nagłówek H2", value: "h2" },
+            { title: "Nagłówek H3", value: "h3" },
+            { title: "Cytat", value: "blockquote" },
+          ],
+          marks: {
+            decorators: [
+              { title: "Pogrubiony", value: "strong" },
+              { title: "Kursywa", value: "em" },
+              { title: "Podkreślenie", value: "underline" },
+            ],
+            annotations: [
+              {
+                name: "link",
+                type: "object",
+                title: "Link",
+                fields: [
+                  { name: "href", type: "url", title: "URL" },
+                  { name: "blank", type: "boolean", title: "Otwórz w nowym oknie", initialValue: true },
+                ],
+              },
+            ],
+          },
+        },
+      ],
       validation: (r) => r.required().min(1),
     }),
   ],

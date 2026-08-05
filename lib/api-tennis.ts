@@ -149,8 +149,9 @@ interface RawTournament {
 }
 
 interface ApiResponse<T> {
-  result: T[];
+  result: T[] | string;
   success: number;
+  error?: string;
 }
 
 // ─── HTTP helper ──────────────────────────────────────────────────────────────
@@ -164,7 +165,8 @@ async function apiFetch<T>(params: Record<string, string>, revalidate: number): 
 
   if (!res.ok) throw new Error(`API-Tennis error ${res.status}`);
   const data: ApiResponse<T> = await res.json();
-  // API returns {"result":"0"} when no data available
+  // API returns {"error":"1",...} for auth failures and {"result":"0"} when no data
+  if (data.error === "1" || data.success === 0) throw new Error("API-Tennis auth failed or no data");
   if (!data.result || !Array.isArray(data.result)) return [];
   return data.result;
 }
@@ -221,7 +223,10 @@ function statValue(stats: RawStatEntry[] | undefined, type: string, side: "home"
 export async function fetchLiveScores(): Promise<LiveMatch[]> {
   const raw = await apiFetch<RawMatch>({ method: "get_livescore" }, 60);
 
-  return raw.slice(0, 20).map((m, i) => ({
+  return raw
+    .filter(m => m.event_first_player?.trim() && m.event_second_player?.trim() && m.tournament_name?.trim() !== ".")
+    .slice(0, 20)
+    .map((m, i) => ({
     id: m.event_key || `m${i}`,
     tournament: m.tournament_name,
     surface: toSurface(m.surface ?? ""),

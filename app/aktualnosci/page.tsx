@@ -7,7 +7,8 @@ import { Badge } from "@/components/ui/badge";
 import { Input } from "@/components/ui/input";
 import { Tabs, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Clock, Search, User } from "lucide-react";
-import { newsArticles as mockArticles, type NewsArticle } from "@/lib/mock-data";
+import { newsArticles as mockArticles } from "@/lib/mock-data";
+import type { SanityArticle } from "@/lib/sanity";
 
 const categories = ["Wszystkie", "ATP", "WTA", "Roland Garros", "Wimbledon", "Transfer", "Polska", "Juniorzy"];
 
@@ -40,7 +41,7 @@ export default function AktualnosciPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Wszystkie");
   const [tab, setTab] = useState("wszystkie");
-  const [newsArticles, setNewsArticles] = useState<NewsArticle[]>([]);
+  const [newsArticles, setNewsArticles] = useState<SanityArticle[]>([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -51,11 +52,11 @@ export default function AktualnosciPage() {
         const data = await r.json();
         return Array.isArray(data) && data.length > 0 ? data : null;
       })
-      .then((d: NewsArticle[] | null) => {
+      .then((d: SanityArticle[] | null) => {
         if (d) setNewsArticles(d);
-        else setNewsArticles(mockArticles);
+        else setNewsArticles(mockArticles as unknown as SanityArticle[]);
       })
-      .catch(() => { setNewsArticles(mockArticles); })
+      .catch(() => { setNewsArticles(mockArticles as unknown as SanityArticle[]); })
       .finally(() => setLoading(false));
   }, []);
 

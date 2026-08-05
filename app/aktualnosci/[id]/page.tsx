@@ -1,16 +1,26 @@
 import { notFound } from "next/navigation";
 import Image from "next/image";
 import Link from "next/link";
-import { newsArticles, type ContentBlock } from "@/lib/mock-data";
-import { getAllArticleSlugs, getArticleBySlug } from "@/lib/sanity";
+import { PortableText } from "@portabletext/react";
+import type { PortableTextBlock, PortableTextReactComponents } from "@portabletext/react";
+import { newsArticles, type ContentBlock, type NewsArticle } from "@/lib/mock-data";
+import { getAllArticleSlugs, getArticleBySlug, getRelatedArticles, type SanityArticle } from "@/lib/sanity";
 import { ArrowLeft, Clock, User, Calendar } from "lucide-react";
 import ReadingProgress from "./ReadingProgress";
 import ClientShare from "./ClientShare";
 
-async function getArticle(id: string) {
+// ── Data fetching ──────────────────────────────────────────────────────────────
+
+type ArticleSource =
+  | { source: "sanity"; article: SanityArticle }
+  | { source: "mock"; article: NewsArticle };
+
+async function getArticle(id: string): Promise<ArticleSource | null> {
   const fromSanity = await getArticleBySlug(id);
-  if (fromSanity) return fromSanity;
-  return newsArticles.find((a) => a.id === id) ?? null;
+  if (fromSanity) return { source: "sanity", article: fromSanity };
+  const mock = newsArticles.find((a) => a.id === id);
+  if (mock) return { source: "mock", article: mock };
+  return null;
 }
 
 // ── Static params ─────────────────────────────────────────────────────────────
@@ -24,31 +34,24 @@ export async function generateStaticParams() {
 // ── Metadata ──────────────────────────────────────────────────────────────────
 export async function generateMetadata({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const article = await getArticle(id);
-  if (!article) return {};
+  const result = await getArticle(id);
+  if (!result) return {};
   return {
-    title: `${article.title} — zkortu.pl`,
-    description: article.excerpt,
+    title: `${result.article.title} — zkortu.pl`,
+    description: result.article.excerpt,
   };
 }
 
-// ── Image seeds (same as listing page) ───────────────────────────────────────
+// ── Image seed ────────────────────────────────────────────────────────────────
 const newsImageSeeds = [
-  "tennis-news-iga",
-  "tennis-news-atp",
-  "tennis-news-wta",
-  "tennis-news-rg",
-  "tennis-news-wb",
-  "tennis-news-ao",
-  "tennis-news-junior",
-  "tennis-news-transfer",
-  "tennis-news-poland",
-  "tennis-news-clay",
+  "tennis-news-iga", "tennis-news-atp", "tennis-news-wta", "tennis-news-rg",
+  "tennis-news-wb", "tennis-news-ao", "tennis-news-junior", "tennis-news-transfer",
+  "tennis-news-poland", "tennis-news-clay",
 ];
 
-function articleImageSeed(article: (typeof newsArticles)[number]) {
-  const idx = newsArticles.findIndex((a) => a.id === article.id);
-  return newsImageSeeds[idx % newsImageSeeds.length];
+function articleImageSeed(id: string) {
+  const hash = id.split("").reduce((a, c) => a + c.charCodeAt(0), 0);
+  return newsImageSeeds[hash % newsImageSeeds.length];
 }
 
 // ── Category color ────────────────────────────────────────────────────────────
@@ -62,39 +65,61 @@ const catColors: Record<string, string> = {
   Transfer: "bg-slate-100 text-slate-800",
 };
 
-// ── Content block renderer ────────────────────────────────────────────────────
+// ── Portable Text renderer (Sanity articles) ──────────────────────────────────
+const ptComponents: Partial<PortableTextReactComponents> = {
+  block: {
+    normal: ({ children }) => (
+      <p className="text-base leading-[1.85] text-foreground/80 mb-5">{children}</p>
+    ),
+    lead: ({ children }) => (
+      <p className="text-xl leading-relaxed font-medium text-foreground/90 mb-6">{children}</p>
+    ),
+    h2: ({ children }) => (
+      <h2 className="text-xl font-black mt-10 mb-4" style={{ color: "var(--brand)" }}>
+        {children}
+      </h2>
+    ),
+    h3: ({ children }) => (
+      <h3 className="text-lg font-bold mt-8 mb-3">{children}</h3>
+    ),
+    blockquote: ({ children }) => (
+      <blockquote className="my-8 pl-5 border-l-4 space-y-2" style={{ borderColor: "var(--gold)" }}>
+        <p className="text-lg italic leading-relaxed text-foreground/85">{children}</p>
+      </blockquote>
+    ),
+  },
+  marks: {
+    strong: ({ children }) => <strong className="font-bold">{children}</strong>,
+    em: ({ children }) => <em>{children}</em>,
+    underline: ({ children }) => <span className="underline">{children}</span>,
+    link: ({ value, children }) => (
+      <a
+        href={value?.href}
+        target={value?.blank ? "_blank" : "_self"}
+        rel="noopener noreferrer"
+        className="underline hover:opacity-70 transition-opacity"
+        style={{ color: "var(--brand)" }}
+      >
+        {children}
+      </a>
+    ),
+  },
+};
+
+// ── Mock block renderer (fallback) ────────────────────────────────────────────
 function Block({ block }: { block: ContentBlock }) {
   switch (block.type) {
     case "lead":
-      return (
-        <p className="text-xl leading-relaxed font-medium text-foreground/90 mb-6">
-          {block.text}
-        </p>
-      );
+      return <p className="text-xl leading-relaxed font-medium text-foreground/90 mb-6">{block.text}</p>;
     case "paragraph":
-      return (
-        <p className="text-base leading-[1.85] text-foreground/80 mb-5">
-          {block.text}
-        </p>
-      );
+      return <p className="text-base leading-[1.85] text-foreground/80 mb-5">{block.text}</p>;
     case "heading":
-      return (
-        <h2
-          className="text-xl font-black mt-10 mb-4"
-          style={{ color: "var(--brand)" }}
-        >
-          {block.text}
-        </h2>
-      );
+      return <h2 className="text-xl font-black mt-10 mb-4" style={{ color: "var(--brand)" }}>{block.text}</h2>;
     case "quote":
       return (
-        <blockquote className="my-8 pl-5 border-l-4 border-[--gold] space-y-2" style={{ borderColor: "var(--gold)" }}>
-          <p className="text-lg italic leading-relaxed text-foreground/85">
-            &ldquo;{block.text}&rdquo;
-          </p>
-          <cite className="text-sm font-semibold not-italic" style={{ color: "var(--brand)" }}>
-            — {block.author}
-          </cite>
+        <blockquote className="my-8 pl-5 border-l-4 space-y-2" style={{ borderColor: "var(--gold)" }}>
+          <p className="text-lg italic leading-relaxed text-foreground/85">&ldquo;{block.text}&rdquo;</p>
+          <cite className="text-sm font-semibold not-italic" style={{ color: "var(--brand)" }}>— {block.author}</cite>
         </blockquote>
       );
   }
@@ -103,30 +128,31 @@ function Block({ block }: { block: ContentBlock }) {
 // ── Page ──────────────────────────────────────────────────────────────────────
 export default async function ArticlePage({ params }: { params: Promise<{ id: string }> }) {
   const { id } = await params;
-  const article = await getArticle(id);
-  if (!article) notFound();
+  const result = await getArticle(id);
+  if (!result) notFound();
 
-  const related = newsArticles
-    .filter((a) => a.id !== id && (a.category === article.category || a.author === article.author))
-    .slice(0, 3);
+  const { source, article } = result;
+
+  const relatedSanity = source === "sanity"
+    ? await getRelatedArticles(id, article.category)
+    : [];
+  const relatedMock = source === "mock"
+    ? newsArticles.filter((a) => a.id !== id && (a.category === article.category || a.author === article.author)).slice(0, 3)
+    : [];
+  const related = relatedSanity.length > 0 ? relatedSanity : relatedMock;
 
   const formattedDate = new Date(article.date).toLocaleDateString("pl-PL", {
-    weekday: "long",
-    day: "numeric",
-    month: "long",
-    year: "numeric",
+    weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
-  const seed = articleImageSeed(article);
+  const seed = articleImageSeed(article.id);
 
   return (
     <>
-      {/* Reading progress bar — client component */}
       <ReadingProgress />
-
       <article className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
-        {/* ── Breadcrumb ── */}
+        {/* Breadcrumb */}
         <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
           <Link
             href="/aktualnosci"
@@ -134,7 +160,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
             style={{ color: "var(--brand)" }}
           >
             <ArrowLeft className="h-3.5 w-3.5" />
-            Aktualnosci
+            Aktualności
           </Link>
           <span>/</span>
           <span className="truncate max-w-xs">{article.category}</span>
@@ -142,19 +168,13 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
 
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
 
-          {/* ── Main article column ── */}
+          {/* Main column */}
           <div className="lg:col-span-2">
-
-            {/* Category + title */}
             <div className="mb-6">
               <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full mb-4 ${catColors[article.category] ?? "bg-muted text-muted-foreground"}`}>
                 {article.category}
               </span>
-              <h1 className="text-3xl sm:text-4xl font-black leading-tight mb-5">
-                {article.title}
-              </h1>
-
-              {/* Meta row */}
+              <h1 className="text-3xl sm:text-4xl font-black leading-tight mb-5">{article.title}</h1>
               <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pb-5 border-b border-border">
                 <span className="flex items-center gap-1.5 font-medium text-foreground">
                   <User className="h-3.5 w-3.5" />
@@ -187,26 +207,31 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
 
             {/* Article body */}
             <div className="max-w-[68ch]">
-              {article.content.map((block, i) => (
-                <Block key={i} block={block} />
-              ))}
+              {source === "sanity" ? (
+                <PortableText
+                  value={article.content as PortableTextBlock[]}
+                  components={ptComponents}
+                />
+              ) : (
+                (article as NewsArticle).content.map((block, i) => (
+                  <Block key={i} block={block} />
+                ))
+              )}
             </div>
 
-            {/* Share row */}
+            {/* Share */}
             <div className="flex items-center gap-3 mt-10 pt-8 border-t border-border">
-              <span className="text-sm font-medium text-muted-foreground">Udostepnij:</span>
+              <span className="text-sm font-medium text-muted-foreground">Udostępnij:</span>
               <ClientShare title={article.title} />
             </div>
           </div>
 
-          {/* ── Sidebar ── */}
+          {/* Sidebar */}
           <aside className="space-y-8">
 
             {/* Author card */}
             <div className="rounded-2xl border border-border bg-card p-5">
-              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
-                Autor
-              </p>
+              <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">Autor</p>
               <div className="flex items-center gap-3">
                 <div
                   className="w-10 h-10 rounded-full flex items-center justify-center text-white font-black text-sm flex-shrink-0"
@@ -227,7 +252,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
             {related.length > 0 && (
               <div>
                 <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">
-                  Przeczytaj rowniez
+                  Przeczytaj również
                 </h3>
                 <div className="space-y-3">
                   {related.map((rel) => (
@@ -238,7 +263,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
                     >
                       <div className="relative w-16 h-14 rounded-lg overflow-hidden flex-shrink-0">
                         <Image
-                          src={`https://picsum.photos/seed/${articleImageSeed(rel)}/160/120`}
+                          src={`https://picsum.photos/seed/${articleImageSeed(rel.id)}/160/120`}
                           alt={rel.title}
                           fill
                           className="object-cover group-hover:scale-105 transition-transform duration-300"
@@ -258,13 +283,12 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
               </div>
             )}
 
-            {/* Back to listing CTA */}
             <Link
               href="/aktualnosci"
               className="flex items-center justify-center gap-2 w-full py-3 rounded-xl border border-border text-sm font-semibold hover:bg-muted transition-colors"
             >
               <ArrowLeft className="h-4 w-4" />
-              Wszystkie aktualnosci
+              Wszystkie aktualności
             </Link>
           </aside>
         </div>
@@ -272,4 +296,3 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
     </>
   );
 }
-
