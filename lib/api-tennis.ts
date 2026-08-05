@@ -149,9 +149,8 @@ interface RawTournament {
 }
 
 interface ApiResponse<T> {
-  result: T[] | string;
+  result: T[];
   success: number;
-  error?: string;
 }
 
 // ─── HTTP helper ──────────────────────────────────────────────────────────────
@@ -222,10 +221,7 @@ function statValue(stats: RawStatEntry[] | undefined, type: string, side: "home"
 export async function fetchLiveScores(): Promise<LiveMatch[]> {
   const raw = await apiFetch<RawMatch>({ method: "get_livescore" }, 60);
 
-  return raw
-    .filter(m => m.event_first_player?.trim() && m.event_second_player?.trim() && m.tournament_name?.trim() !== ".")
-    .slice(0, 20)
-    .map((m, i) => ({
+  return raw.slice(0, 20).map((m, i) => ({
     id: m.event_key || `m${i}`,
     tournament: m.tournament_name,
     surface: toSurface(m.surface ?? ""),
