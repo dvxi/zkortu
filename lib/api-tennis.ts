@@ -165,8 +165,7 @@ async function apiFetch<T>(params: Record<string, string>, revalidate: number): 
 
   if (!res.ok) throw new Error(`API-Tennis error ${res.status}`);
   const data: ApiResponse<T> = await res.json();
-  // API returns {"error":"1",...} for auth failures, {"result":"0"} when no data
-  if (data.error === "1") throw new Error("API-Tennis auth failed");
+  // API returns {"result":"0"} when no data available
   if (!data.result || !Array.isArray(data.result)) return [];
   return data.result;
 }
