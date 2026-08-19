@@ -14,7 +14,6 @@ const navLinks = [
   { href: "/wideo", label: "Wideo" },
   { href: "/ranking", label: "Ranking" },
   { href: "/kalendarz", label: "Kalendarz" },
-  { href: "/tenis-juniorski", label: "Juniorzy" },
   { href: "/kontakt", label: "Kontakt" },
 ];
 
@@ -23,7 +22,7 @@ export default function Navbar() {
   const [open, setOpen] = useState(false);
 
   return (
-    <header className="sticky top-0 z-50 w-full" style={{ backgroundColor: "var(--brand)" }}>
+    <header className="sticky top-0 z-50 w-full" style={{ backgroundColor: "#ee8232" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 h-16 flex items-center justify-between">
         {/* Logo */}
         <Link href="/" className="flex items-center flex-shrink-0">
@@ -81,7 +80,7 @@ export default function Navbar() {
           >
             <Menu className="h-5 w-5" />
           </SheetTrigger>
-          <SheetContent side="right" className="w-72 p-0" style={{ backgroundColor: "var(--brand)", borderColor: "rgba(255,255,255,0.1)" }}>
+          <SheetContent side="right" className="w-72 p-0" style={{ backgroundColor: "#ee8232", borderColor: "rgba(255,255,255,0.1)" }}>
             <div className="flex items-center justify-between p-4 border-b" style={{ borderColor: "rgba(255,255,255,0.1)" }}>
               <Link href="/" className="flex items-center" onClick={() => setOpen(false)}>
                 <span className="font-black text-lg text-white">zkortu</span>

@@ -41,8 +41,16 @@ export default function AktualnosciPage() {
   const [search, setSearch] = useState("");
   const [category, setCategory] = useState("Wszystkie");
   const [tab, setTab] = useState("wszystkie");
+  const [tagFilter, setTagFilter] = useState<string | null>(null);
   const [newsArticles, setNewsArticles] = useState<SanityArticle[]>([]);
   const [loading, setLoading] = useState(true);
+
+  // Read ?tag= from URL without useSearchParams (avoids Suspense boundary requirement)
+  useEffect(() => {
+    const params = new URLSearchParams(window.location.search);
+    const tag = params.get("tag");
+    if (tag) setTagFilter(tag);
+  }, []);
 
   useEffect(() => {
     fetch("/api/articles")
@@ -77,7 +85,8 @@ export default function AktualnosciPage() {
       (tab === "dzisiaj" && a.date === todayStr) ||
       (tab === "wczoraj" && a.date === yesterdayStr) ||
       (tab === "tydzien" && a.date >= weekAgoStr);
-    return matchesCategory && matchesSearch && matchesTab;
+    const matchesTag = !tagFilter || (a.tags ?? []).includes(tagFilter);
+    return matchesCategory && matchesSearch && matchesTab && matchesTag;
   });
 
   const grouped = filtered.reduce<Record<string, typeof newsArticles>>((acc, article) => {
@@ -140,6 +149,23 @@ export default function AktualnosciPage() {
           </TabsList>
         </Tabs>
       </div>
+
+      {/* Active tag filter */}
+      {tagFilter && (
+        <div className="flex items-center gap-2 mb-4 p-3 rounded-xl border border-border bg-card text-sm">
+          <span className="text-muted-foreground">Filtrowanie po tagu:</span>
+          <span className="font-semibold" style={{ color: "var(--brand)" }}>{tagFilter}</span>
+          <button
+            onClick={() => {
+              setTagFilter(null);
+              window.history.replaceState({}, "", "/aktualnosci");
+            }}
+            className="ml-auto text-xs text-muted-foreground hover:text-foreground transition-colors px-2 py-0.5 rounded border border-border hover:border-foreground/30"
+          >
+            Usuń filtr ×
+          </button>
+        </div>
+      )}
 
       {/* Category chips */}
       <div className="flex flex-wrap gap-2 mb-8">

@@ -1,7 +1,6 @@
 "use client";
 
 import { useState, useEffect } from "react";
-import { Tabs, TabsList, TabsTrigger, TabsContent } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import {
   TrendingUp,
@@ -25,25 +24,12 @@ async function loadRankings(type: "ATP" | "WTA"): Promise<Player[]> {
   }
 }
 
-function PointsDiff({ diff }: { diff: number }) {
+function RankChange({ diff }: { diff: number }) {
   if (diff > 0)
-    return (
-      <span className="flex items-center gap-0.5 text-green-600 text-xs font-semibold">
-        <TrendingUp className="h-3 w-3" />+{diff}
-      </span>
-    );
+    return <TrendingUp className="h-3.5 w-3.5 text-green-600" aria-label="Awans" />;
   if (diff < 0)
-    return (
-      <span className="flex items-center gap-0.5 text-red-500 text-xs font-semibold">
-        <TrendingDown className="h-3 w-3" />
-        {diff}
-      </span>
-    );
-  return (
-    <span className="flex items-center gap-0.5 text-muted-foreground text-xs">
-      <Minus className="h-3 w-3" />0
-    </span>
-  );
+    return <TrendingDown className="h-3.5 w-3.5 text-red-500" aria-label="Spadek" />;
+  return <Minus className="h-3.5 w-3.5 text-muted-foreground" aria-label="Bez zmian" />;
 }
 
 function RankMedal({ rank }: { rank: number }) {
@@ -55,20 +41,10 @@ function RankMedal({ rank }: { rank: number }) {
 
 interface RankingTableProps {
   players: Player[];
-  variant: "main" | "live" | "race";
+  variant?: "main" | "live" | "race";
 }
 
-function RankingTable({ players, variant }: RankingTableProps) {
-  const liveOffset = variant === "live"
-    ? players.map((p) => ({ ...p, points: p.points + ((p.points * 7 + 13) % 200) - 50 }))
-    : players;
-
-  const racePoints = variant === "race"
-    ? players.map((p) => ({ ...p, points: Math.floor(p.points * 0.42) })).sort((a, b) => b.points - a.points).map((p, i) => ({ ...p, rank: i + 1 }))
-    : liveOffset;
-
-  const data = racePoints;
-
+function RankingTable({ players }: RankingTableProps) {
   return (
     <div className="rounded-xl overflow-hidden border border-border">
       <table className="w-full">
@@ -78,12 +54,11 @@ function RankingTable({ players, variant }: RankingTableProps) {
             <th className="text-left px-4 py-3 text-xs font-semibold text-white/70">Zawodnik</th>
             <th className="text-left px-4 py-3 text-xs font-semibold text-white/70 hidden sm:table-cell">Kraj</th>
             <th className="text-right px-4 py-3 text-xs font-semibold text-white/70">Punkty</th>
-            <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 hidden sm:table-cell">Zmiana</th>
-            <th className="text-right px-4 py-3 text-xs font-semibold text-white/70 hidden lg:table-cell">Najlepszy</th>
+            <th className="text-center px-4 py-3 text-xs font-semibold text-white/70 hidden sm:table-cell">Zmiana</th>
           </tr>
         </thead>
         <tbody>
-          {data.map((player, idx) => (
+          {players.map((player, idx) => (
             <tr
               key={`${player.rank}-${player.name}`}
               className={`border-t border-border transition-colors hover:bg-muted/30 ${
@@ -105,17 +80,13 @@ function RankingTable({ players, variant }: RankingTableProps) {
               <td className="px-4 py-3 text-sm text-muted-foreground hidden sm:table-cell">
                 {player.country}
               </td>
-
               <td className="px-4 py-3 text-right">
                 <span className="font-bold text-sm">
                   {player.points.toLocaleString("pl-PL")}
                 </span>
               </td>
-              <td className="px-4 py-3 text-right hidden sm:table-cell">
-                <PointsDiff diff={player.pointsDiff} />
-              </td>
-              <td className="px-4 py-3 text-right text-sm text-muted-foreground hidden lg:table-cell">
-                #{player.bestRank}
+              <td className="px-4 py-3 text-center hidden sm:table-cell">
+                <RankChange diff={player.pointsDiff} />
               </td>
             </tr>
           ))}
@@ -136,13 +107,13 @@ const rankingTypes = [
     id: "live",
     label: "Live",
     icon: RefreshCw,
-    description: "Ranking uwzględniający wyniki z trwającego turnieju. Odświeżany co godzinę — punkty są doliczane natychmiast po każdym meczu.",
+    description: "Ranking live uwzględnia punkty z trwającego turnieju. Dane poniżej to oficjalny ranking ATP/WTA — integracja z danymi live w przygotowaniu.",
   },
   {
     id: "race",
     label: "Race",
     icon: Flag,
-    description: "Race to Turin/Fort Worth — ranking sezonowy sumujący punkty zdobyte od 1 stycznia. Decyduje o kwalifikacji do Finals.",
+    description: "Race to Turin / Fort Worth — ranking sezonowy od 1 stycznia. Dane poniżej to oficjalny ranking ATP/WTA — integracja z Race w przygotowaniu.",
   },
 ];
 
@@ -237,12 +208,11 @@ export default function RankingPage() {
           </span>
           <p className="text-sm text-muted-foreground mt-0.5">{currentType.description}</p>
         </div>
-        {rankType === "live" && (
+        {(rankType === "live" || rankType === "race") && (
           <Badge
-            className="ml-auto flex-shrink-0 text-xs border-0"
-            style={{ backgroundColor: "rgba(var(--live), 0.15)", color: "var(--live)" }}
+            className="ml-auto flex-shrink-0 text-xs border-0 bg-amber-100 text-amber-700"
           >
-            Odświeżono: przed chwilą
+            W przygotowaniu
           </Badge>
         )}
       </div>
@@ -295,9 +265,9 @@ export default function RankingPage() {
       {/* Last updated info */}
       <div className="mt-4 text-xs text-muted-foreground flex items-center gap-1.5">
         <Timer className="h-3 w-3" />
-        {rankType === "main" && "Ostatnia aktualizacja: poniedziałek, 2 czerwca 2026"}
-        {rankType === "live" && "Ranking live odświeżany co godzinę · Ostatnio: dziś, 19:00"}
-        {rankType === "race" && "Ranking Race 2026 · Punkty od 1 stycznia 2026"}
+        {rankType === "main" && "Dane na podstawie oficjalnego rankingu ATP/WTA · Aktualizacja co poniedziałek"}
+        {rankType === "live" && "Wyświetlany jest oficjalny ranking ATP/WTA · Integracja Live w przygotowaniu"}
+        {rankType === "race" && "Wyświetlany jest oficjalny ranking ATP/WTA · Integracja Race w przygotowaniu"}
       </div>
     </div>
   );

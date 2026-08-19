@@ -7,7 +7,6 @@ const footerLinks = {
     { href: "/wyniki-live", label: "Wyniki live" },
     { href: "/ranking", label: "Ranking ATP/WTA" },
     { href: "/kalendarz", label: "Kalendarz turniejów" },
-    { href: "/tenis-juniorski", label: "Tenis juniorski" },
   ],
   "Serwis": [
     { href: "/aktualnosci", label: "Aktualności" },
@@ -36,7 +35,7 @@ export default async function Footer() {
   const socialLinks = social.length > 0 ? social : DEFAULT_SOCIAL;
 
   return (
-    <footer style={{ backgroundColor: "var(--brand)" }}>
+    <footer style={{ backgroundColor: "#ee8232" }}>
       <div className="max-w-7xl mx-auto px-4 sm:px-6 pt-12 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8 mb-8">
           {/* Brand */}

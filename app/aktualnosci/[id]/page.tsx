@@ -5,9 +5,11 @@ import { PortableText } from "@portabletext/react";
 import type { PortableTextBlock, PortableTextReactComponents } from "@portabletext/react";
 import { newsArticles, type ContentBlock, type NewsArticle } from "@/lib/mock-data";
 import { getAllArticleSlugs, getArticleBySlug, getRelatedArticles, type SanityArticle } from "@/lib/sanity";
-import { ArrowLeft, Clock, User, Calendar } from "lucide-react";
+import { ArrowLeft, Clock, User, Calendar, RefreshCw, Tag } from "lucide-react";
 import ReadingProgress from "./ReadingProgress";
-import ClientShare from "./ClientShare";
+import SocialShare from "./SocialShare";
+import EmbedBlock from "./EmbedBlock";
+import Comments from "./Comments";
 
 // ── Data fetching ──────────────────────────────────────────────────────────────
 
@@ -104,9 +106,12 @@ const ptComponents: Partial<PortableTextReactComponents> = {
       </a>
     ),
   },
+  types: {
+    embed: ({ value }: { value: { html: string } }) => <EmbedBlock html={value.html} />,
+  },
 };
 
-// ── Mock block renderer (fallback) ────────────────────────────────────────────
+// ── Mock block renderer ────────────────────────────────────────────────────────
 function Block({ block }: { block: ContentBlock }) {
   switch (block.type) {
     case "lead":
@@ -122,6 +127,8 @@ function Block({ block }: { block: ContentBlock }) {
           <cite className="text-sm font-semibold not-italic" style={{ color: "var(--brand)" }}>— {block.author}</cite>
         </blockquote>
       );
+    case "embed":
+      return <EmbedBlock html={block.html} />;
   }
 }
 
@@ -137,7 +144,15 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
     ? await getRelatedArticles(id, article.category)
     : [];
   const relatedMock = source === "mock"
-    ? newsArticles.filter((a) => a.id !== id && (a.category === article.category || a.author === article.author)).slice(0, 3)
+    ? newsArticles
+        .filter((a) => {
+          if (a.id === id) return false;
+          const articleTags = (article as NewsArticle).tags ?? [];
+          const aTags = a.tags ?? [];
+          if (articleTags.length > 0 && aTags.some((t) => articleTags.includes(t))) return true;
+          return a.category === article.category;
+        })
+        .slice(0, 3)
     : [];
   const related = relatedSanity.length > 0 ? relatedSanity : relatedMock;
 
@@ -145,7 +160,31 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
     weekday: "long", day: "numeric", month: "long", year: "numeric",
   });
 
+  const formattedUpdated = article.updatedAt
+    ? new Date(article.updatedAt).toLocaleDateString("pl-PL", {
+        day: "numeric", month: "long", year: "numeric",
+      })
+    : null;
+
   const seed = articleImageSeed(article.id);
+
+  // Extract lead from mock content to display before the hero image
+  const mockContent = source === "mock" ? (article as NewsArticle).content : null;
+  const leadBlock = mockContent?.[0]?.type === "lead" ? mockContent[0] : null;
+  const bodyBlocks = leadBlock ? mockContent!.slice(1) : mockContent;
+
+  // For Sanity: extract lead block if first block has style "lead"
+  type PTBlock = PortableTextBlock & { children?: Array<{ text?: string }> };
+  const sanityBlocks = source === "sanity" ? (article.content as PTBlock[]) : null;
+  const sanityLeadBlock = sanityBlocks?.[0]?.style === "lead" ? sanityBlocks[0] : null;
+  const sanityBodyBlocks = sanityLeadBlock
+    ? (article.content as PortableTextBlock[]).slice(1)
+    : (article.content as PortableTextBlock[]);
+  const sanityLeadText = sanityLeadBlock
+    ? sanityLeadBlock.children?.map((c) => c.text ?? "").join("") ?? ""
+    : null;
+
+  const tags = article.tags ?? [];
 
   return (
     <>
@@ -153,7 +192,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
       <article className="max-w-7xl mx-auto px-4 sm:px-6 py-8">
 
         {/* Breadcrumb */}
-        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8">
+        <nav className="flex items-center gap-2 text-sm text-muted-foreground mb-8" aria-label="Nawigacja">
           <Link
             href="/aktualnosci"
             className="flex items-center gap-1.5 font-medium hover:text-foreground transition-colors"
@@ -166,67 +205,130 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
           <span className="truncate max-w-xs">{article.category}</span>
         </nav>
 
-        <div className="grid grid-cols-1 lg:grid-cols-3 gap-12">
+        <div className="grid grid-cols-1 lg:grid-cols-[1fr_320px] gap-12">
 
-          {/* Main column */}
-          <div className="lg:col-span-2">
-            <div className="mb-6">
+          {/* ── Main column ──────────────────────────────────────────────── */}
+          <div>
+
+            {/* Category + Title */}
+            <div className="mb-5">
               <span className={`inline-block text-xs font-bold px-3 py-1 rounded-full mb-4 ${catColors[article.category] ?? "bg-muted text-muted-foreground"}`}>
                 {article.category}
               </span>
-              <h1 className="text-3xl sm:text-4xl font-black leading-tight mb-5">{article.title}</h1>
-              <div className="flex flex-wrap items-center gap-4 text-sm text-muted-foreground pb-5 border-b border-border">
-                <span className="flex items-center gap-1.5 font-medium text-foreground">
-                  <User className="h-3.5 w-3.5" />
-                  {article.author}
-                  {article.authorRole && (
-                    <span className="font-normal text-muted-foreground">· {article.authorRole}</span>
-                  )}
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Calendar className="h-3.5 w-3.5" />
-                  <span className="capitalize">{formattedDate}</span>
-                </span>
-                <span className="flex items-center gap-1.5">
-                  <Clock className="h-3.5 w-3.5" />
-                  {article.readTime} min czytania
-                </span>
-              </div>
+              <h1 className="text-3xl sm:text-4xl font-black leading-tight mb-5">
+                {article.title}
+              </h1>
             </div>
 
-            {/* Hero image */}
+            {/* Meta row */}
+            <div className="flex flex-wrap items-center gap-x-5 gap-y-2 text-sm text-muted-foreground pb-5 border-b border-border mb-6">
+              <span className="flex items-center gap-1.5 font-medium text-foreground">
+                <User className="h-3.5 w-3.5 flex-shrink-0" />
+                {article.author}
+                {article.authorRole && (
+                  <span className="font-normal text-muted-foreground">· {article.authorRole}</span>
+                )}
+              </span>
+
+              {article.articleSource && (
+                <span className="flex items-center gap-1.5">
+                  Źródło: <span className="font-medium text-foreground">{article.articleSource}</span>
+                </span>
+              )}
+
+              <span className="flex items-center gap-1.5">
+                <Calendar className="h-3.5 w-3.5 flex-shrink-0" />
+                <span className="capitalize">{formattedDate}</span>
+              </span>
+
+              {formattedUpdated && (
+                <span className="flex items-center gap-1.5">
+                  <RefreshCw className="h-3.5 w-3.5 flex-shrink-0" />
+                  Aktualizacja: {formattedUpdated}
+                </span>
+              )}
+
+              <span className="flex items-center gap-1.5">
+                <Clock className="h-3.5 w-3.5 flex-shrink-0" />
+                {article.readTime} min czytania
+              </span>
+            </div>
+
+            {/* Lead paragraph (before the hero image) */}
+            {leadBlock && (
+              <p className="text-lg sm:text-xl leading-relaxed font-medium text-foreground/90 mb-7 max-w-[68ch]">
+                {leadBlock.text}
+              </p>
+            )}
+            {sanityLeadText && (
+              <p className="text-lg sm:text-xl leading-relaxed font-medium text-foreground/90 mb-7 max-w-[68ch]">
+                {sanityLeadText}
+              </p>
+            )}
+
+            {/* Hero image with caption overlay */}
             <div className="relative w-full aspect-[16/9] rounded-2xl overflow-hidden mb-8 bg-muted">
               <Image
                 src={`https://picsum.photos/seed/${seed}/1200/675`}
-                alt={article.title}
+                alt={article.imageCaption ?? article.title}
                 fill
                 priority
                 className="object-cover"
               />
+              {(article.imageCaption ?? article.imageCredit) && (
+                <div className="absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/80 via-black/40 to-transparent pt-16 pb-3 px-4">
+                  <p className="text-white/90 text-xs leading-snug">
+                    {article.imageCaption}
+                    {article.imageCaption && article.imageCredit && (
+                      <span className="text-white/60">, {article.imageCredit}</span>
+                    )}
+                    {!article.imageCaption && article.imageCredit && (
+                      <span className="text-white/70">{article.imageCredit}</span>
+                    )}
+                  </p>
+                </div>
+              )}
             </div>
 
             {/* Article body */}
             <div className="max-w-[68ch]">
               {source === "sanity" ? (
                 <PortableText
-                  value={article.content as PortableTextBlock[]}
+                  value={sanityBodyBlocks}
                   components={ptComponents}
                 />
               ) : (
-                (article as NewsArticle).content.map((block, i) => (
-                  <Block key={i} block={block} />
-                ))
+                bodyBlocks?.map((block, i) => <Block key={i} block={block} />)
               )}
             </div>
 
             {/* Share */}
-            <div className="flex items-center gap-3 mt-10 pt-8 border-t border-border">
-              <span className="text-sm font-medium text-muted-foreground">Udostępnij:</span>
-              <ClientShare title={article.title} />
+            <div className="mt-10 pt-8 border-t border-border">
+              <p className="text-sm font-semibold text-muted-foreground mb-3">Udostępnij:</p>
+              <SocialShare title={article.title} />
             </div>
+
+            {/* Tags */}
+            {tags.length > 0 && (
+              <div className="mt-6 flex flex-wrap items-center gap-2">
+                <Tag className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                {tags.map((tag) => (
+                  <Link
+                    key={tag}
+                    href={`/aktualnosci?tag=${encodeURIComponent(tag)}`}
+                    className="px-3 py-1 rounded-full text-xs font-semibold border border-border text-muted-foreground hover:text-foreground hover:border-foreground/30 transition-colors"
+                  >
+                    {tag}
+                  </Link>
+                ))}
+              </div>
+            )}
+
+            {/* Comments */}
+            <Comments articleId={article.id} />
           </div>
 
-          {/* Sidebar */}
+          {/* ── Sidebar ──────────────────────────────────────────────────── */}
           <aside className="space-y-8">
 
             {/* Author card */}
@@ -251,8 +353,8 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
             {/* Related articles */}
             {related.length > 0 && (
               <div>
-                <h3 className="text-sm font-bold uppercase tracking-widest text-muted-foreground mb-4">
-                  Przeczytaj również
+                <h3 className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-4">
+                  {tags.length > 0 ? "Podobne artykuły" : "Przeczytaj również"}
                 </h3>
                 <div className="space-y-3">
                   {related.map((rel) => (

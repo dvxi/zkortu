@@ -8,11 +8,16 @@ export interface SanityArticle {
   excerpt: string;
   category: string;
   date: string;
+  updatedAt?: string;
   readTime: number;
   imageQuery?: string;
+  imageCaption?: string;
+  imageCredit?: string;
   featured?: boolean;
   author: string;
   authorRole?: string;
+  articleSource?: string;
+  tags?: string[];
   content: PortableTextBlock[];
 }
 
@@ -38,11 +43,16 @@ const ARTICLE_FIELDS = `
   excerpt,
   category,
   "date": date,
+  updatedAt,
   readTime,
   imageQuery,
+  imageCaption,
+  imageCredit,
   featured,
   author,
   authorRole,
+  articleSource,
+  tags,
   content
 `;
 

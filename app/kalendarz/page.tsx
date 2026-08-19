@@ -606,75 +606,140 @@ export default function KalendarzPage() {
 
       {/* ── Tournament Detail Sheet ── */}
       <Sheet open={!!selectedTournament} onOpenChange={() => setSelectedTournament(null)}>
-        <SheetContent className="w-full sm:max-w-lg overflow-y-auto">
+        <SheetContent className="w-full sm:max-w-lg overflow-y-auto p-0">
           {selectedTournament && (
             <>
-              <SheetHeader className="mb-6">
-                <SheetTitle className="text-xl font-black" style={{ color: "var(--brand)" }}>
-                  {selectedTournament.flag} {selectedTournament.name}
-                </SheetTitle>
-              </SheetHeader>
-
-              <div className="px-4 pb-6 space-y-6">
-              <div className="grid grid-cols-2 gap-3">
-                <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Powierzchnia</p>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${surfaceColors[selectedTournament.surface]}`}>
-                    {selectedTournament.surface}
-                  </span>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                  <p className="text-xs text-muted-foreground mb-1">Kategoria</p>
-                  <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${categoryColors[selectedTournament.category]}`}>
-                    {selectedTournament.category}
-                  </span>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                  <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                    <CalendarDays className="h-3 w-3" /> Daty
-                  </p>
-                  <p className="text-sm font-semibold">
-                    {selectedTournament.startDate
-                      ? `${new Date(selectedTournament.startDate + "T12:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "short" })} – ${new Date(selectedTournament.endDate + "T12:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "short" })}`
-                      : "—"}
-                  </p>
-                </div>
-                <div className="p-3 rounded-lg bg-muted/50 border border-border">
-                  <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
-                    <Trophy className="h-3 w-3" /> Nagrody
-                  </p>
-                  <p className="text-sm font-semibold">{selectedTournament.prize}</p>
+              {/* Tournament image */}
+              <div className="relative w-full h-44 overflow-hidden flex-shrink-0">
+                <Image
+                  src={
+                    selectedTournament.imageUrl ??
+                    `https://picsum.photos/seed/${picsumSeedMap[selectedTournament.id] ?? "tennis-tour-t1"}/600/300`
+                  }
+                  alt={selectedTournament.name}
+                  fill
+                  className="object-cover"
+                />
+                <div className="absolute inset-0 bg-gradient-to-t from-black/70 via-black/20 to-transparent" />
+                {selectedTournament.status === "live" && (
+                  <div className="absolute top-3 left-3 flex items-center gap-1.5 px-2.5 py-1 rounded text-white text-xs font-bold" style={{ backgroundColor: "var(--live)" }}>
+                    <span className="relative flex h-2 w-2">
+                      <span className="animate-ping absolute inline-flex h-full w-full rounded-full opacity-75 bg-white" />
+                      <span className="relative inline-flex rounded-full h-2 w-2 bg-white" />
+                    </span>
+                    LIVE
+                  </div>
+                )}
+                <div className="absolute bottom-3 left-4 right-4">
+                  <SheetHeader>
+                    <SheetTitle className="text-xl font-black text-white text-left">
+                      {selectedTournament.flag} {selectedTournament.name}
+                    </SheetTitle>
+                  </SheetHeader>
+                  <p className="text-white/70 text-xs mt-0.5">{selectedTournament.location}, {selectedTournament.country}</p>
                 </div>
               </div>
 
-              {mockDrawResults[selectedTournament.id] && (
-                <div>
-                  <h3 className="font-bold text-sm mb-3">Aktualne wyniki drabinki</h3>
-                  <div className="space-y-2">
-                    {mockDrawResults[selectedTournament.id].map((result, i) => (
-                      <div key={i} className="flex items-center gap-2 text-sm p-2 rounded-lg bg-muted/30">
-                        <PlayCircle className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
-                        {result}
-                      </div>
-                    ))}
+              <div className="px-5 pb-6 pt-5 space-y-5">
+                {/* Surface + Category + Dates + Prize */}
+                <div className="grid grid-cols-2 gap-3">
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-xs text-muted-foreground mb-1">Powierzchnia</p>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${surfaceColors[selectedTournament.surface]}`}>
+                      {selectedTournament.surface}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-xs text-muted-foreground mb-1">Kategoria</p>
+                    <span className={`text-xs font-semibold px-2 py-0.5 rounded border ${categoryColors[selectedTournament.category]}`}>
+                      {selectedTournament.category}
+                    </span>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                      <CalendarDays className="h-3 w-3" /> Daty
+                    </p>
+                    <p className="text-sm font-semibold">
+                      {selectedTournament.startDate
+                        ? `${new Date(selectedTournament.startDate + "T12:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "short" })} – ${new Date(selectedTournament.endDate + "T12:00:00").toLocaleDateString("pl-PL", { day: "numeric", month: "short" })}`
+                        : "—"}
+                    </p>
+                  </div>
+                  <div className="p-3 rounded-lg bg-muted/50 border border-border">
+                    <p className="text-xs text-muted-foreground mb-1 flex items-center gap-1">
+                      <Trophy className="h-3 w-3" /> Nagrody
+                    </p>
+                    <p className="text-sm font-semibold">{selectedTournament.prize}</p>
                   </div>
                 </div>
-              )}
 
-              {selectedTournament.liveStreamUrl && (
-                <a
-                  href={selectedTournament.liveStreamUrl}
-                  target="_blank"
-                  rel="noopener noreferrer"
-                  className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
-                  style={{ backgroundColor: "var(--brand)", color: "white" }}
-                >
-                  <PlayCircle className="h-4 w-4" />
-                  Oglądaj na żywo
-                  <ExternalLink className="h-3.5 w-3.5" />
-                </a>
-              )}
-              </div>{/* end px-4 wrapper */}
+                {/* Current champion */}
+                {selectedTournament.currentChampion && (
+                  <div className="rounded-xl border border-border bg-card p-4">
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-2">
+                      Aktualny mistrz
+                    </p>
+                    <div className="flex items-center gap-3">
+                      <div
+                        className="w-8 h-8 rounded-full flex items-center justify-center text-white flex-shrink-0"
+                        style={{ backgroundColor: "var(--gold)" }}
+                      >
+                        <Trophy className="h-4 w-4" style={{ color: "var(--brand)" }} />
+                      </div>
+                      <p className="font-bold text-sm">{selectedTournament.currentChampion}</p>
+                    </div>
+                  </div>
+                )}
+
+                {/* Past winners */}
+                {selectedTournament.pastWinners && selectedTournament.pastWinners.length > 0 && (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
+                      Poprzedni zwycięzcy
+                    </p>
+                    <div className="space-y-1">
+                      {selectedTournament.pastWinners.map((w) => (
+                        <div key={w.year} className="flex items-center gap-3 py-1.5 border-b border-border/50 last:border-0">
+                          <span className="text-xs font-bold text-muted-foreground w-10 flex-shrink-0">{w.year}</span>
+                          <span className="text-sm font-medium">{w.name}</span>
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Draw results */}
+                {mockDrawResults[selectedTournament.id] && (
+                  <div>
+                    <p className="text-xs font-bold uppercase tracking-widest text-muted-foreground mb-3">
+                      Aktualne wyniki drabinki
+                    </p>
+                    <div className="space-y-2">
+                      {mockDrawResults[selectedTournament.id].map((result, i) => (
+                        <div key={i} className="flex items-center gap-2 text-sm p-2.5 rounded-lg bg-muted/30">
+                          <PlayCircle className="h-3.5 w-3.5 text-muted-foreground flex-shrink-0" />
+                          {result}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+
+                {/* Live stream link */}
+                {selectedTournament.liveStreamUrl && (
+                  <a
+                    href={selectedTournament.liveStreamUrl}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center justify-center gap-2 w-full py-3 rounded-xl font-semibold text-sm transition-opacity hover:opacity-90"
+                    style={{ backgroundColor: "var(--brand)", color: "white" }}
+                  >
+                    <PlayCircle className="h-4 w-4" />
+                    Oglądaj na żywo
+                    <ExternalLink className="h-3.5 w-3.5" />
+                  </a>
+                )}
+              </div>
             </>
           )}
         </SheetContent>
