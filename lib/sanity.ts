@@ -211,6 +211,43 @@ export async function getAllVideos(): Promise<SanityVideo[]> {
   }
 }
 
+// ── Tournaments ───────────────────────────────────────────────────────────────
+
+export interface SanityTournament {
+  _id: string;
+  name: string;
+  location: string;
+  country: string;
+  flag?: string;
+  surface: "Clay" | "Grass" | "Hard" | "Indoor Hard";
+  category: "Grand Slam" | "ATP 1000" | "ATP 500" | "ATP 250" | "WTA 1000" | "WTA 500" | "WTA 250";
+  startDate: string;
+  endDate: string;
+  prize?: string;
+  currentChampion?: string;
+  pastWinners?: Array<{ year: number; name: string }>;
+  imageQuery?: string;
+  liveStreamUrl?: string;
+}
+
+export async function getAllTournaments(): Promise<SanityTournament[]> {
+  if (!isSanityConfigured()) return [];
+  try {
+    const results = await getClient().fetch<SanityTournament[]>(
+      `*[_type == "tournament"] | order(startDate asc) {
+        _id, name, location, country, flag, surface, category,
+        startDate, endDate, prize, currentChampion,
+        pastWinners[] { year, name },
+        imageQuery, liveStreamUrl
+      }`,
+    );
+    return Array.isArray(results) ? results : [];
+  } catch (err) {
+    console.error("Sanity getAllTournaments error:", err);
+    return [];
+  }
+}
+
 // ── Site Settings ─────────────────────────────────────────────────────────────
 
 export interface SiteSettings {
