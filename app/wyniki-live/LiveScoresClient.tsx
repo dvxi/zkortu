@@ -365,6 +365,7 @@ export function LiveScoresClient({ initial = null }: { initial?: LiveMatch[] | n
                     return (
                       <button
                         key={m.id}
+                        data-match={m.id}
                         onClick={() => select(m.id)}
                         aria-pressed={isSelected}
                         className={cn(

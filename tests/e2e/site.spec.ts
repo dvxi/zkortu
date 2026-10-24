@@ -56,7 +56,7 @@ test.describe("live ticker and live page", () => {
       await expect(page.getByText(/nie trwa żaden mecz|Brak meczów/)).toBeVisible();
       return;
     }
-    const cards = page.locator("button[aria-pressed]");
+    const cards = page.locator("button[data-match]");
     await expect(cards.first()).toBeVisible();
     expect(await cards.count()).toBeGreaterThan(0);
     await cards.first().click();
