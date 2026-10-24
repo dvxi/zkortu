@@ -14,12 +14,16 @@ export const metadata: Metadata = {
   alternates: { canonical: "/ranking" },
 };
 
-async function load(tour: "ATP" | "WTA"): Promise<{ players: Player[]; error: string | null }> {
+const INITIAL_ROWS = 100;
+
+async function load(tour: "ATP" | "WTA"): Promise<{ players: Player[]; total: number; error: string | null }> {
   try {
-    return { players: await fetchRankings(tour), error: null };
+    const players = await fetchRankings(tour);
+    // only the first page is embedded in the HTML; the client fetches the full list on demand
+    return { players: players.slice(0, INITIAL_ROWS), total: players.length, error: null };
   } catch (err) {
     (err instanceof ApiTennisError && err.code === "no-key" ? console.warn : console.error)(`[ranking page:${tour}]`, String(err));
-    return { players: [], error: describeApiError(err) };
+    return { players: [], total: 0, error: describeApiError(err) };
   }
 }
 

@@ -206,11 +206,11 @@ function MatchDetail({ match }: { match: LiveMatch }) {
   );
 }
 
-export function LiveScoresClient() {
-  const [live, setLive] = useState<LiveMatch[] | null>(null);
+export function LiveScoresClient({ initial = null }: { initial?: LiveMatch[] | null }) {
+  const [live, setLive] = useState<LiveMatch[] | null>(initial);
   const [day, setDay] = useState<LiveMatch[]>([]);
   const [error, setError] = useState<string | null>(null);
-  const [loading, setLoading] = useState(true);
+  const [loading, setLoading] = useState(initial === null);
   const [refreshing, setRefreshing] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [showAll, setShowAll] = useState(false);
@@ -252,7 +252,9 @@ export function LiveScoresClient() {
     let active = true;
     // initial load is deferred so the effect body itself never touches state
     const initial = setTimeout(() => {
-      Promise.all([loadLive(), loadDay()]).finally(() => active && setLoading(false));
+      // render as soon as the live feed answers; the day schedule merges in when it arrives
+      loadLive().finally(() => active && setLoading(false));
+      loadDay();
     }, 0);
     const a = setInterval(loadLive, POLL_LIVE_MS);
     const b = setInterval(loadDay, POLL_DAY_MS);

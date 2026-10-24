@@ -1,6 +1,6 @@
 "use client";
 
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Info, Search, Timer } from "lucide-react";
 import type { Player } from "@/lib/types";
@@ -10,11 +10,11 @@ import { cn } from "@/lib/utils";
 import { Chip } from "@/components/site/Badges";
 import { Flag } from "@/components/site/Flag";
 import { MovementIcon, RankNumber } from "@/components/site/RankingWidget";
-import { EmptyState, ErrorState } from "@/components/site/States";
+import { EmptyState, ErrorState, SkeletonRows } from "@/components/site/States";
 
 export interface RankingData {
-  ATP: { players: Player[]; error: string | null };
-  WTA: { players: Player[]; error: string | null };
+  ATP: { players: Player[]; total: number; error: string | null };
+  WTA: { players: Player[]; total: number; error: string | null };
 }
 
 type Tour = "ATP" | "WTA";
@@ -38,7 +38,32 @@ export function RankingExplorer({ data, updatedAt }: Props) {
   const [pageState, setPageState] = useState({ key: filterKey, page: 1 });
   const page = pageState.key === filterKey ? pageState.page : 1;
 
-  const { players, error } = data[tour];
+  // full lists are fetched lazily (the HTML only carries the first page of each tour)
+  const [full, setFull] = useState<Partial<Record<Tour, Player[]>>>({});
+  const [fullError, setFullError] = useState<string | null>(null);
+  useEffect(() => {
+    if (full[tour] || data[tour].error) return;
+    let active = true;
+    const id = setTimeout(async () => {
+      try {
+        const res = await fetch(`/api/rankings?tour=${tour}`);
+        const json = (await res.json()) as { players?: Player[]; error?: string };
+        if (!active) return;
+        if (res.ok && json.players) setFull((prev) => ({ ...prev, [tour]: json.players }));
+        else setFullError(json.error ?? "Nie udało się pobrać pełnej listy.");
+      } catch {
+        if (active) setFullError("Nie udało się pobrać pełnej listy.");
+      }
+    }, 0);
+    return () => {
+      active = false;
+      clearTimeout(id);
+    };
+  }, [tour, full, data]);
+
+  const { error, total } = data[tour];
+  const players = full[tour] ?? data[tour].players;
+  const fullLoaded = Boolean(full[tour]);
 
   const filtered = useMemo(() => {
     const q = normalizeName(query);
@@ -49,7 +74,9 @@ export function RankingExplorer({ data, updatedAt }: Props) {
     });
   }, [players, query, onlyPoland]);
 
-  const totalPages = Math.max(1, Math.ceil(filtered.length / PAGE_SIZE));
+  const isFiltering = Boolean(query) || onlyPoland;
+  const listLength = fullLoaded || isFiltering ? filtered.length : total;
+  const totalPages = Math.max(1, Math.ceil(listLength / PAGE_SIZE));
   const current = Math.min(page, totalPages);
   const rows = filtered.slice((current - 1) * PAGE_SIZE, current * PAGE_SIZE);
   const polesCount = players.filter((p) => p.countryCode === "PL").length;
@@ -116,7 +143,9 @@ export function RankingExplorer({ data, updatedAt }: Props) {
       ) : players.length === 0 ? (
         <EmptyState title="Brak danych rankingowych" description="Spróbuj ponownie za kilka minut." />
       ) : filtered.length === 0 ? (
-        <EmptyState title="Nie znaleziono zawodników" description="Zmień zapytanie lub wyłącz filtr." />
+        <EmptyState title={fullLoaded ? "Nie znaleziono zawodników" : "Wczytywanie pełnej listy…"} description={fullLoaded ? "Zmień zapytanie lub wyłącz filtr." : fullError ?? "Wyszukiwanie obejmie wszystkich zawodników za chwilę."} />
+      ) : rows.length === 0 ? (
+        <SkeletonRows rows={10} />
       ) : (
         <div key={`${tour}-${current}`} className="anim-switch overflow-hidden rounded-2xl border border-border bg-card">
           <table className="w-full">
@@ -180,7 +209,7 @@ export function RankingExplorer({ data, updatedAt }: Props) {
           <span className="text-sm text-muted-foreground">
             Strona <span className="font-bold text-ink">{current}</span> z <span className="font-bold text-ink">{totalPages}</span>
             <span className="ml-2 hidden text-xs sm:inline">
-              (miejsca {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, filtered.length)} z {filtered.length})
+              (miejsca {(current - 1) * PAGE_SIZE + 1}–{Math.min(current * PAGE_SIZE, listLength)} z {listLength})
             </span>
           </span>
           <button
@@ -195,7 +224,7 @@ export function RankingExplorer({ data, updatedAt }: Props) {
 
       <p className="mt-4 flex items-center gap-1.5 text-xs text-muted-foreground">
         <Timer className="h-3 w-3" />
-        {players.length > 0 && `${players.length} ${pluralPl(players.length, "zawodnik", "zawodników", "zawodników")} · `}
+        {listLength > 0 && `${listLength} ${pluralPl(listLength, "zawodnik", "zawodników", "zawodników")} · `}
         Dane: oficjalny ranking {tour} · odświeżono {formatDateTime(updatedAt)}
       </p>
     </div>

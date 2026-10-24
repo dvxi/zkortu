@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, PlayCircle } from "lucide-react";
-import { ApiTennisError, describeApiError, fetchRankings } from "@/lib/api-tennis";
+import { ApiTennisError, describeApiError, fetchLiveScores, fetchRankings } from "@/lib/api-tennis";
+import type { LiveMatch } from "@/lib/types";
 import { getAllArticles, getAllVideos, getTournaments } from "@/lib/sanity";
 import type { Player } from "@/lib/types";
 import { videoCategoryLabel } from "@/lib/constants";
@@ -13,7 +14,7 @@ import { EmptyState } from "@/components/site/States";
 import { TournamentCard } from "@/components/site/TournamentCard";
 import { extractYouTubeId } from "@/app/wideo/youtube";
 
-export const revalidate = 300;
+export const revalidate = 60;
 
 async function loadRanking(tour: "ATP" | "WTA"): Promise<{ players: Player[]; error: string | null }> {
   try {
@@ -24,13 +25,22 @@ async function loadRanking(tour: "ATP" | "WTA"): Promise<{ players: Player[]; er
   }
 }
 
+async function loadLive(): Promise<LiveMatch[]> {
+  try {
+    return await fetchLiveScores("tour", { revalidate: 60, tags: ["live"] });
+  } catch {
+    return [];
+  }
+}
+
 export default async function HomePage() {
-  const [articles, tournaments, atp, wta, videos] = await Promise.all([
+  const [articles, tournaments, atp, wta, videos, live] = await Promise.all([
     getAllArticles(12),
     getTournaments(),
     loadRanking("ATP"),
     loadRanking("WTA"),
     getAllVideos(),
+    loadLive(),
   ]);
 
   const featured = articles.find((a) => a.featured) ?? articles[0] ?? null;
@@ -45,7 +55,7 @@ export default async function HomePage() {
 
   return (
     <div>
-      <LiveTicker />
+      <LiveTicker initial={live} />
 
       <div className="mx-auto max-w-7xl px-4 py-8 sm:px-6 sm:py-10">
         <div className="grid grid-cols-1 gap-10 lg:grid-cols-3 lg:gap-8">
@@ -54,9 +64,7 @@ export default async function HomePage() {
             <section aria-labelledby="home-news">
               <SectionHeading title="Najnowsze aktualności" href="/aktualnosci" />
               {featured ? (
-                <div className="anim-fade-up">
-                  <ArticleCard article={featured} variant="featured" priority />
-                </div>
+                <ArticleCard article={featured} variant="featured" priority />
               ) : (
                 <EmptyState title="Wkrótce pierwsze materiały" description="Redakcja przygotowuje pierwsze artykuły." />
               )}
@@ -74,10 +82,8 @@ export default async function HomePage() {
               <SectionHeading title={liveTournaments.length > 0 ? "Trwające i najbliższe turnieje" : "Najbliższe turnieje"} href="/kalendarz" linkLabel="Kalendarz" live={liveTournaments.length > 0} />
               {spotlight.length > 0 ? (
                 <div className="grid grid-cols-1 gap-4 sm:grid-cols-2">
-                  {spotlight.map((t, i) => (
-                    <div key={t.id} className={`anim-fade-up anim-delay-${Math.min(i + 1, 4)}`}>
-                      <TournamentCard tournament={t} />
-                    </div>
+                  {spotlight.map((t) => (
+                    <TournamentCard key={t.id} tournament={t} />
                   ))}
                 </div>
               ) : (
@@ -103,7 +109,7 @@ export default async function HomePage() {
                   {latestVideos.map((v) => {
                     const ytId = extractYouTubeId(v.youtubeUrl);
                     return (
-                      <a key={v.id} href={v.youtubeUrl} target="_blank" rel="noopener noreferrer" className="group overflow-hidden rounded-2xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-md">
+                      <a key={v.id} href={v.youtubeUrl} target="_blank" rel="noopener noreferrer" className="group overflow-hidden rounded-2xl border border-border bg-card transition-transform hover:-translate-y-0.5 hover:shadow-md">
                         <div className="relative aspect-video overflow-hidden">
                           <CoverImage src={ytId ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg` : null} alt={v.title} sizes="(max-width: 640px) 100vw, 33vw" className="object-cover transition-transform duration-500 group-hover:scale-105" placeholderLabel="Wideo" />
                           <div className="absolute inset-0 flex items-center justify-center">
@@ -129,10 +135,8 @@ export default async function HomePage() {
               <section className="hidden lg:block" aria-labelledby="home-side-news">
                 <SectionHeading title="Więcej aktualności" href="/aktualnosci" size="md" />
                 <div className="space-y-1">
-                  {sideNews.map((a, i) => (
-                    <div key={a._id} className={`anim-fade-up anim-delay-${Math.min(i + 1, 4)}`}>
-                      <ArticleCard article={a} variant="row" />
-                    </div>
+                  {sideNews.map((a) => (
+                    <ArticleCard key={a._id} article={a} variant="row" />
                   ))}
                 </div>
               </section>

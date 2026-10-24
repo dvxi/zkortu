@@ -92,7 +92,7 @@ function useTournamentMatches(id: string | null): MatchesState {
 function TournamentListItem({ t, onClick }: { t: Tournament; onClick: () => void }) {
   return (
     <button onClick={onClick} className="group w-full text-left">
-      <div className="flex items-center gap-4 rounded-2xl border border-border bg-card p-3.5 transition-all hover:-translate-y-0.5 hover:border-ink/30 hover:shadow-md">
+      <div className="flex items-center gap-4 rounded-2xl border border-border bg-card p-3.5 transition-transform hover:-translate-y-0.5 hover:border-ink/30 hover:shadow-md">
         <div className="relative hidden h-16 w-28 shrink-0 overflow-hidden rounded-lg sm:block">
           {t.imageUrl ? <Image src={t.imageUrl} alt={t.name} fill sizes="112px" className="object-cover" /> : <ImagePlaceholder surface={t.surface} />}
         </div>

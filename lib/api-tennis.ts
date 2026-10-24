@@ -153,7 +153,7 @@ const str = (v: Str): string => (v === null || v === undefined ? "" : String(v))
 
 // ─── HTTP helper ─────────────────────────────────────────────────────────────
 
-type CacheMode = { revalidate: number; tags?: string[] } | "no-store";
+export type CacheMode = { revalidate: number; tags?: string[] } | "no-store";
 
 async function apiFetch<T>(params: Record<string, string>, cache: CacheMode): Promise<T[]> {
   const key = getApiKey();
@@ -501,10 +501,14 @@ export function isMainTour(match: Pick<LiveMatch, "tour">): boolean {
   return match.tour === "ATP" || match.tour === "WTA";
 }
 
-/** All matches in the live feed (in play + just finished). `scope: "tour"` keeps ATP/WTA only. */
-export async function fetchLiveScores(scope: LiveScope = "tour"): Promise<LiveMatch[]> {
+/**
+ * All matches in the live feed (in play + just finished). `scope: "tour"` keeps ATP/WTA only.
+ * `cache` defaults to no-store (API routes); ISR pages pass a short revalidate to embed
+ * an initial snapshot in the HTML and let the client poll for updates.
+ */
+export async function fetchLiveScores(scope: LiveScope = "tour", cache: CacheMode = "no-store"): Promise<LiveMatch[]> {
   const [raw, countryIndex, surfaceIndex] = await Promise.all([
-    apiFetch<RawMatch>({ method: "get_livescore" }, "no-store"),
+    apiFetch<RawMatch>({ method: "get_livescore" }, cache),
     getPlayerCountryIndex(),
     getSurfaceIndex(),
   ]);

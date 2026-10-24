@@ -64,7 +64,7 @@ export function ArticleCard({ article, variant = "card", priority, className }: 
     <Link
       href={href}
       className={cn(
-        "group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-12px_rgba(28,25,23,0.25)]",
+        "group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-transform duration-200 hover:-translate-y-0.5 hover:shadow-[0_10px_30px_-12px_rgba(28,25,23,0.25)]",
         className,
       )}
     >

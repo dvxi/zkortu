@@ -50,7 +50,7 @@ test.describe("live ticker and live page", () => {
   test("live page lists matches and opens details with sets", async ({ page }) => {
     await gotoReady(page, "/wyniki-live");
     const data = await apiJson<{ matches: Array<{ id: string; status: string; player1: { name: string } }> }>(page, "/api/livescores?scope=tour");
-    const today = await apiJson<{ matches: Array<{ id: string }> }>(page, `/api/matches?date=${new Date().toISOString().slice(0, 10)}&scope=tour`);
+    const today = await apiJson<{ matches: Array<{ id: string; status: string }> }>(page, `/api/matches?date=${new Date().toISOString().slice(0, 10)}&scope=tour`);
     const expected = new Set([...data.matches, ...today.matches].map((m) => m.id)).size;
     if (expected === 0) {
       await expect(page.getByText(/nie trwa żaden mecz|Brak meczów/)).toBeVisible();
@@ -64,9 +64,12 @@ test.describe("live ticker and live page", () => {
     const detail = page.locator(".anim-switch").filter({ hasText: /Sety|Mecz rozpocznie się|Brak wyniku|Statystyki/ }).first();
     await expect(detail).toBeVisible();
     await page.getByRole("button", { name: /Na żywo/ }).click();
-    const liveCount = data.matches.filter((m) => m.status === "live").length;
+    const merged = new Map<string, { status: string }>();
+    for (const m of today.matches as Array<{ id: string; status: string }>) merged.set(m.id, m);
+    for (const m of data.matches) merged.set(m.id, m);
+    const liveCount = [...merged.values()].filter((m) => m.status === "live").length;
     if (liveCount === 0) await expect(page.getByText(/nie trwa żaden mecz/)).toBeVisible();
-    else expect(await cards.count()).toBe(liveCount);
+    else await expect(cards).toHaveCount(liveCount);
   });
 });
 

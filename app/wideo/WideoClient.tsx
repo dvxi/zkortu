@@ -90,7 +90,7 @@ export default function WideoClient({ videos, tournaments }: Props) {
           {grid.length > 0 && (
             <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
               {grid.map((video) => (
-                <a key={video.id} href={video.youtubeUrl} target="_blank" rel="noopener noreferrer" className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-md">
+                <a key={video.id} href={video.youtubeUrl} target="_blank" rel="noopener noreferrer" className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-transform hover:-translate-y-0.5 hover:shadow-md">
                   <div className="relative aspect-video overflow-hidden">
                     <CoverImage src={youtubeThumb(video.youtubeUrl)} alt={video.title} sizes="(max-width: 640px) 100vw, 33vw" className="object-cover transition-transform duration-500 group-hover:scale-105" placeholderLabel="Wideo" />
                     <div className="absolute inset-0 flex items-center justify-center">

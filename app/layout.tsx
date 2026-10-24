@@ -9,7 +9,7 @@ import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/constants";
 const raleway = Raleway({
   variable: "--font-sans",
   subsets: ["latin", "latin-ext"],
-  weight: ["400", "500", "600", "700", "800", "900"],
+  weight: ["400", "500", "600", "700", "900"],
   display: "swap",
 });
 
