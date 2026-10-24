@@ -58,6 +58,8 @@ npx tsx scripts/import-calendar.ts --year=2026                # tworzy brakując
 npx tsx scripts/import-calendar.ts --year=2026 --update-dates # dodatkowo nadpisuje daty istniejących
 ```
 
+Import uruchamia się automatycznie co poniedziałek przez GitHub Actions (`.github/workflows/import-calendar.yml`; w grudniu dodatkowo importuje kolejny sezon). Wymaga sekretów repozytorium `API_TENNIS_KEY` i `SANITY_API_TOKEN` (Settings → Secrets and variables → Actions). Można go też odpalić ręcznie z zakładki Actions. Statusy „trwa/zakończony” i mecze turniejów nie wymagają importu: liczą się z dat i pobierają z API-Tennis na bieżąco.
+
 Alternatywnie `scripts/seed-tournaments.mjs` zawiera ręcznie przygotowany sezon 2026 (52 turnieje).
 
 ## Struktura

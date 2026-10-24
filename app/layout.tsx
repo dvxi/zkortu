@@ -3,6 +3,7 @@ import { Raleway } from "next/font/google";
 import "./globals.css";
 import { SiteHeader } from "@/components/site/SiteHeader";
 import { SiteFooter } from "@/components/site/SiteFooter";
+import { SiteChrome } from "@/components/site/SiteChrome";
 import { getSiteSettings } from "@/lib/sanity";
 import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/constants";
 
@@ -44,9 +45,13 @@ export default async function RootLayout({ children }: Readonly<{ children: Reac
   return (
     <html lang="pl" className={`${raleway.variable} h-full antialiased`}>
       <body className="flex min-h-full flex-col bg-background text-foreground">
-        <SiteHeader logoUrl={settings?.logoUrl ?? null} />
+        <SiteChrome>
+          <SiteHeader logoUrl={settings?.logoUrl ?? null} />
+        </SiteChrome>
         <main className="flex-1">{children}</main>
-        <SiteFooter />
+        <SiteChrome>
+          <SiteFooter />
+        </SiteChrome>
       </body>
     </html>
   );

@@ -1,0 +1,49 @@
+name: Import tournament calendar
+
+# Weekly refresh of the season calendar in Sanity (WTA official JSON + ESPN for ATP,
+# API-Tennis keys verified against fixtures). Also runnable by hand from the Actions tab.
+on:
+  schedule:
+    - cron: "0 5 * * 1" # Mondays 05:00 UTC
+  workflow_dispatch:
+    inputs:
+      year:
+        description: "Season year"
+        required: false
+      update_dates:
+        description: "Overwrite dates of existing tournaments"
+        type: boolean
+        default: false
+
+jobs:
+  import:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 22
+          cache: npm
+      - run: npm ci
+      - name: Import calendar into Sanity
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID || 'g3425kho' }}
+          NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET || 'production' }}
+        run: |
+          YEAR="${{ github.event.inputs.year }}"
+          [ -z "$YEAR" ] && YEAR=$(date -u +%Y)
+          FLAGS=""
+          [ "${{ github.event.inputs.update_dates }}" = "true" ] && FLAGS="--update-dates"
+          npx tsx scripts/import-calendar.ts --year=$YEAR $FLAGS
+      - name: Import next season (December onwards)
+        if: ${{ github.event_name == 'schedule' }}
+        env:
+          API_TENNIS_KEY: ${{ secrets.API_TENNIS_KEY }}
+          SANITY_API_TOKEN: ${{ secrets.SANITY_API_TOKEN }}
+          NEXT_PUBLIC_SANITY_PROJECT_ID: ${{ vars.NEXT_PUBLIC_SANITY_PROJECT_ID || 'g3425kho' }}
+          NEXT_PUBLIC_SANITY_DATASET: ${{ vars.NEXT_PUBLIC_SANITY_DATASET || 'production' }}
+        run: |
+          if [ "$(date -u +%m)" = "12" ]; then npx tsx scripts/import-calendar.ts --year=$(( $(date -u +%Y) + 1 )); fi
