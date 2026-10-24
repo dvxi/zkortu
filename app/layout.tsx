@@ -1,35 +1,52 @@
-import type { Metadata } from "next";
+import type { Metadata, Viewport } from "next";
 import { Raleway } from "next/font/google";
 import "./globals.css";
-import Navbar from "@/components/Navbar";
-import Footer from "@/components/Footer";
+import { SiteHeader } from "@/components/site/SiteHeader";
+import { SiteFooter } from "@/components/site/SiteFooter";
+import { getSiteSettings } from "@/lib/sanity";
+import { SITE_DESCRIPTION, SITE_NAME, SITE_URL } from "@/lib/constants";
 
 const raleway = Raleway({
   variable: "--font-sans",
   subsets: ["latin", "latin-ext"],
   weight: ["400", "500", "600", "700", "800", "900"],
+  display: "swap",
 });
 
 export const metadata: Metadata = {
-  title: "zkortu.pl — Tenis na żywo",
-  description:
-    "Portal tenisowy zkortu.pl — wyniki na żywo, rankingi ATP i WTA, aktualności, kalendarz turniejów i skróty wideo.",
+  metadataBase: new URL(SITE_URL),
+  title: {
+    default: "zkortu.pl – tenis na żywo: wyniki, rankingi, aktualności",
+    template: "%s | zkortu.pl",
+  },
+  description: SITE_DESCRIPTION,
+  applicationName: SITE_NAME,
+  openGraph: {
+    type: "website",
+    siteName: SITE_NAME,
+    locale: "pl_PL",
+    url: SITE_URL,
+    title: "zkortu.pl – tenis na żywo",
+    description: SITE_DESCRIPTION,
+  },
+  twitter: { card: "summary_large_image" },
+  robots: { index: true, follow: true },
 };
 
-export default function RootLayout({
-  children,
-}: Readonly<{
-  children: React.ReactNode;
-}>) {
+export const viewport: Viewport = {
+  themeColor: "#ee8232",
+  width: "device-width",
+  initialScale: 1,
+};
+
+export default async function RootLayout({ children }: Readonly<{ children: React.ReactNode }>) {
+  const settings = await getSiteSettings();
   return (
-    <html
-      lang="pl"
-      className={`${raleway.variable} h-full antialiased`}
-    >
-      <body className="min-h-full flex flex-col bg-background text-foreground">
-        <Navbar />
+    <html lang="pl" className={`${raleway.variable} h-full antialiased`}>
+      <body className="flex min-h-full flex-col bg-background text-foreground">
+        <SiteHeader logoUrl={settings?.logoUrl ?? null} />
         <main className="flex-1">{children}</main>
-        <Footer />
+        <SiteFooter />
       </body>
     </html>
   );

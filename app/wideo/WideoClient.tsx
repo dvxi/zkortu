@@ -1,37 +1,25 @@
 "use client";
 
 import { useState } from "react";
-import Image from "next/image";
-import { Badge } from "@/components/ui/badge";
-import { PlayCircle, Clock, ExternalLink } from "lucide-react";
+import { Clock, ExternalLink, PlayCircle } from "lucide-react";
 import type { SanityVideo } from "@/lib/sanity";
+import { VIDEO_CATEGORIES, videoCategoryLabel } from "@/lib/constants";
+import { formatDate } from "@/lib/format";
+import { Chip } from "@/components/site/Badges";
+import { CoverImage } from "@/components/site/CoverImage";
+import { EmptyState } from "@/components/site/States";
+import { youtubeThumb } from "./youtube";
 
-const CATEGORIES = ["Wszystkie", "Highlights", "Full Match", "Interview", "Analysis"];
-
-const categoryColors: Record<string, string> = {
-  Highlights: "bg-blue-100 text-blue-800",
-  "Full Match": "bg-purple-100 text-purple-800",
-  Interview: "bg-green-100 text-green-800",
-  Analysis: "bg-orange-100 text-orange-800",
+const categoryTone: Record<string, string> = {
+  Highlights: "bg-sky-50 text-sky-800 border-sky-200",
+  "Full Match": "bg-violet-50 text-violet-800 border-violet-200",
+  Interview: "bg-emerald-50 text-emerald-800 border-emerald-200",
+  Analysis: "bg-orange-50 text-orange-800 border-orange-200",
 };
 
-function extractYouTubeId(url: string): string | null {
-  try {
-    const parsed = new URL(url);
-    // youtu.be/<id>
-    if (parsed.hostname === "youtu.be") {
-      return parsed.pathname.slice(1) || null;
-    }
-    // youtube.com/watch?v=<id>
-    const v = parsed.searchParams.get("v");
-    if (v) return v;
-    // youtube.com/embed/<id> or /shorts/<id>
-    const match = parsed.pathname.match(/\/(?:embed|shorts)\/([^/?#]+)/);
-    if (match) return match[1];
-  } catch {
-    // invalid URL — fall through
-  }
-  return null;
+function CategoryTag({ category }: { category?: string | null }) {
+  if (!category) return null;
+  return <span className={`rounded-md border px-2 py-0.5 text-[11px] font-bold ${categoryTone[category] ?? "bg-slate-50 text-slate-700 border-slate-200"}`}>{videoCategoryLabel(category)}</span>;
 }
 
 interface Props {
@@ -40,69 +28,30 @@ interface Props {
 }
 
 export default function WideoClient({ videos, tournaments }: Props) {
-  const [category, setCategory] = useState("Wszystkie");
-  const [tournament, setTournament] = useState("Wszystkie turnieje");
+  const [category, setCategory] = useState("all");
+  const [tournament, setTournament] = useState("all");
 
-  const allTournaments = ["Wszystkie turnieje", ...tournaments];
-
-  const filtered = videos.filter((v) => {
-    const matchCat = category === "Wszystkie" || v.category === category;
-    const matchTour = tournament === "Wszystkie turnieje" || v.tournament === tournament;
-    return matchCat && matchTour;
-  });
-
-  const featured = filtered[0];
-  const rest = filtered.slice(1);
+  const filtered = videos.filter((v) => (category === "all" || v.category === category) && (tournament === "all" || v.tournament === tournament));
+  const showFeatured = filtered.length >= 4;
+  const featured = showFeatured ? filtered[0] : null;
+  const grid = showFeatured ? filtered.slice(1) : filtered;
 
   return (
     <>
-      {/* Filters */}
-      <div className="flex flex-wrap gap-4 mb-8">
+      <div className="mb-8 flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-center">
         <div className="flex flex-wrap gap-2">
-          {CATEGORIES.map((cat) => (
-            <button
-              key={cat}
-              onClick={() => setCategory(cat)}
-              className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-                category === cat
-                  ? "text-white border-transparent"
-                  : "border-border text-muted-foreground hover:text-foreground hover:border-border/80"
-              }`}
-              style={
-                category === cat
-                  ? { backgroundColor: "var(--brand)", borderColor: "var(--brand)" }
-                  : {}
-              }
-            >
-              {cat}
-            </button>
+          <Chip active={category === "all"} onClick={() => setCategory("all")}>Wszystkie</Chip>
+          {VIDEO_CATEGORIES.map((c) => (
+            <Chip key={c.value} active={category === c.value} onClick={() => setCategory(c.value)}>{c.label}</Chip>
           ))}
         </div>
-        {allTournaments.length > 1 && (
+        {tournaments.length > 0 && (
           <>
-            <div className="h-5 w-px bg-border hidden sm:block self-center" />
+            <span className="hidden h-5 w-px bg-border sm:block" />
             <div className="flex flex-wrap gap-2">
-              {allTournaments.map((t) => (
-                <button
-                  key={t}
-                  onClick={() => setTournament(t)}
-                  className={`px-3 py-1 rounded-full text-xs font-semibold border transition-colors ${
-                    tournament === t
-                      ? "text-white border-transparent"
-                      : "border-border text-muted-foreground hover:text-foreground hover:border-border/80"
-                  }`}
-                  style={
-                    tournament === t
-                      ? {
-                          backgroundColor: "var(--gold)",
-                          borderColor: "var(--gold)",
-                          color: "var(--brand)",
-                        }
-                      : {}
-                  }
-                >
-                  {t}
-                </button>
+              <Chip active={tournament === "all"} onClick={() => setTournament("all")} tone="brand">Wszystkie turnieje</Chip>
+              {tournaments.map((t) => (
+                <Chip key={t} active={tournament === t} onClick={() => setTournament(t)} tone="brand">{t}</Chip>
               ))}
             </div>
           </>
@@ -110,150 +59,56 @@ export default function WideoClient({ videos, tournaments }: Props) {
       </div>
 
       {filtered.length === 0 ? (
-        <div
-          key={`empty-${category}-${tournament}`}
-          className="anim-switch text-center py-20 text-muted-foreground"
-        >
-          Brak filmów dla wybranych filtrów.
-        </div>
+        <EmptyState title="Brak filmów dla wybranych filtrów" />
       ) : (
-        <div key={`${category}-${tournament}`} className="anim-switch">
-          {/* Featured video */}
-          {featured && (() => {
-            const ytId = extractYouTubeId(featured.youtubeUrl);
-            const thumb = ytId
-              ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
-              : `https://picsum.photos/seed/tennis-vid-featured/900/480`;
-            return (
-              <a
-                href={featured.youtubeUrl}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="group block mb-8"
-              >
-                <div className="grid grid-cols-1 lg:grid-cols-5 gap-0 rounded-xl overflow-hidden border border-border">
-                  <div className="relative lg:col-span-3 h-64 lg:h-80 overflow-hidden">
-                    <Image
-                      src={thumb}
-                      alt={featured.title}
-                      fill
-                      className="object-cover group-hover:scale-105 transition-transform duration-500"
-                    />
-                    <div className="absolute inset-0 flex items-center justify-center">
-                      <div
-                        className="w-16 h-16 rounded-full flex items-center justify-center transition-transform group-hover:scale-110"
-                        style={{ backgroundColor: "rgba(15,42,27,0.80)" }}
-                      >
-                        <PlayCircle className="h-10 w-10 text-white" />
-                      </div>
-                    </div>
-                    {featured.duration && (
-                      <div className="absolute bottom-3 right-3 bg-black/70 text-white text-xs px-2 py-1 rounded font-mono">
-                        {featured.duration}
-                      </div>
-                    )}
-                    {featured.category && (
-                      <div className="absolute top-3 left-3">
-                        <span
-                          className={`text-xs font-bold px-2 py-1 rounded ${categoryColors[featured.category] ?? ""}`}
-                        >
-                          {featured.category}
-                        </span>
-                      </div>
-                    )}
-                  </div>
-                  <div className="lg:col-span-2 p-6 flex flex-col justify-center bg-card">
-                    {featured.tournament && (
-                      <Badge variant="outline" className="w-fit mb-3 text-xs">
-                        {featured.tournament}
-                      </Badge>
-                    )}
-                    <h2 className="text-xl font-bold leading-snug mb-3">{featured.title}</h2>
-                    {featured.players && (
-                      <p className="text-sm text-muted-foreground mb-4">{featured.players}</p>
-                    )}
-                    <div className="flex items-center justify-between mt-auto">
-                      {featured.duration ? (
-                        <span className="text-xs text-muted-foreground flex items-center gap-1">
-                          <Clock className="h-3 w-3" /> {featured.duration}
-                        </span>
-                      ) : (
-                        <span />
-                      )}
-                      <span
-                        className="flex items-center gap-1 text-xs font-semibold"
-                        style={{ color: "var(--brand)" }}
-                      >
-                        Oglądaj na YouTube <ExternalLink className="h-3 w-3" />
-                      </span>
-                    </div>
-                  </div>
+        <div key={`${category}-${tournament}`} className="anim-switch space-y-8">
+          {featured && (
+            <a href={featured.youtubeUrl} target="_blank" rel="noopener noreferrer" className="group grid overflow-hidden rounded-2xl border border-border bg-card lg:grid-cols-5">
+              <div className="relative aspect-video lg:col-span-3 lg:aspect-auto lg:min-h-[320px]">
+                <CoverImage src={youtubeThumb(featured.youtubeUrl)} alt={featured.title} sizes="(max-width: 1024px) 100vw, 60vw" className="object-cover transition-transform duration-500 group-hover:scale-105" placeholderLabel="Wideo" />
+                <div className="absolute inset-0 flex items-center justify-center">
+                  <span className="flex h-16 w-16 items-center justify-center rounded-full bg-ink/80 text-white transition-transform group-hover:scale-110"><PlayCircle className="h-9 w-9" /></span>
                 </div>
-              </a>
-            );
-          })()}
+                {featured.duration && <span className="absolute bottom-3 right-3 rounded bg-black/75 px-2 py-1 text-xs font-semibold text-white">{featured.duration}</span>}
+              </div>
+              <div className="flex flex-col justify-center p-6 lg:col-span-2">
+                <div className="mb-3 flex flex-wrap items-center gap-2">
+                  <CategoryTag category={featured.category} />
+                  {featured.tournament && <span className="rounded-md border border-border px-2 py-0.5 text-[11px] font-bold text-muted-foreground">{featured.tournament}</span>}
+                </div>
+                <h2 className="text-balance text-xl font-black leading-snug text-ink sm:text-2xl">{featured.title}</h2>
+                {featured.players && <p className="mt-2 text-sm text-muted-foreground">{featured.players}</p>}
+                {featured.description && <p className="mt-3 line-clamp-3 text-sm leading-relaxed text-foreground/80">{featured.description}</p>}
+                <div className="mt-5 flex items-center justify-between text-xs text-muted-foreground">
+                  <span className="inline-flex items-center gap-1">{featured.date ? formatDate(featured.date) : ""}</span>
+                  <span className="inline-flex items-center gap-1 font-semibold text-brand-strong">Oglądaj na YouTube <ExternalLink className="h-3 w-3" /></span>
+                </div>
+              </div>
+            </a>
+          )}
 
-          {/* Video grid */}
-          {rest.length > 0 && (
-            <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5">
-              {rest.map((video) => {
-                const ytId = extractYouTubeId(video.youtubeUrl);
-                const thumb = ytId
-                  ? `https://img.youtube.com/vi/${ytId}/hqdefault.jpg`
-                  : `https://picsum.photos/seed/tennis-vid-${video.id}/600/400`;
-                return (
-                  <a
-                    key={video.id}
-                    href={video.youtubeUrl}
-                    target="_blank"
-                    rel="noopener noreferrer"
-                    className="group block rounded-xl overflow-hidden border border-border hover:border-border/80 transition-colors bg-card"
-                  >
-                    <div className="relative h-44 overflow-hidden">
-                      <Image
-                        src={thumb}
-                        alt={video.title}
-                        fill
-                        className="object-cover group-hover:scale-105 transition-transform duration-500"
-                      />
-                      <div className="absolute inset-0 flex items-center justify-center">
-                        <div
-                          className="w-12 h-12 rounded-full flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity"
-                          style={{ backgroundColor: "rgba(15,42,27,0.85)" }}
-                        >
-                          <PlayCircle className="h-8 w-8 text-white" />
-                        </div>
-                      </div>
-                      {video.duration && (
-                        <div className="absolute bottom-2 right-2 bg-black/70 text-white text-xs px-1.5 py-0.5 rounded font-mono">
-                          {video.duration}
-                        </div>
-                      )}
-                      {video.category && (
-                        <div className="absolute top-2 left-2">
-                          <span
-                            className={`text-xs font-bold px-2 py-0.5 rounded ${categoryColors[video.category] ?? ""}`}
-                          >
-                            {video.category}
-                          </span>
-                        </div>
-                      )}
+          {grid.length > 0 && (
+            <div className="grid grid-cols-1 gap-5 sm:grid-cols-2 lg:grid-cols-3">
+              {grid.map((video) => (
+                <a key={video.id} href={video.youtubeUrl} target="_blank" rel="noopener noreferrer" className="group flex flex-col overflow-hidden rounded-2xl border border-border bg-card transition-all hover:-translate-y-0.5 hover:shadow-md">
+                  <div className="relative aspect-video overflow-hidden">
+                    <CoverImage src={youtubeThumb(video.youtubeUrl)} alt={video.title} sizes="(max-width: 640px) 100vw, 33vw" className="object-cover transition-transform duration-500 group-hover:scale-105" placeholderLabel="Wideo" />
+                    <div className="absolute inset-0 flex items-center justify-center">
+                      <span className="flex h-12 w-12 items-center justify-center rounded-full bg-ink/80 text-white opacity-0 transition-opacity group-hover:opacity-100"><PlayCircle className="h-7 w-7" /></span>
                     </div>
-                    <div className="p-4">
-                      {video.tournament && (
-                        <p className="text-xs text-muted-foreground mb-1">{video.tournament}</p>
-                      )}
-                      <h3 className="font-semibold text-sm leading-snug line-clamp-2 group-hover:opacity-70 transition-opacity">
-                        {video.title}
-                      </h3>
-                      <div className="flex items-center justify-between mt-3">
-                        <span className="text-xs text-muted-foreground">{video.players ?? ""}</span>
-                        <ExternalLink className="h-3.5 w-3.5 text-muted-foreground group-hover:text-foreground transition-colors" />
-                      </div>
+                    {video.duration && <span className="absolute bottom-2 right-2 rounded bg-black/75 px-1.5 py-0.5 text-[11px] font-semibold text-white">{video.duration}</span>}
+                    <div className="absolute left-2 top-2"><CategoryTag category={video.category} /></div>
+                  </div>
+                  <div className="flex flex-1 flex-col p-4">
+                    {video.tournament && <p className="mb-1 text-[10px] font-black uppercase tracking-[0.16em] text-brand-strong">{video.tournament}</p>}
+                    <h3 className="line-clamp-2 text-sm font-bold leading-snug text-ink transition-opacity group-hover:opacity-70">{video.title}</h3>
+                    <div className="mt-auto flex items-center justify-between pt-3 text-xs text-muted-foreground">
+                      <span className="truncate">{video.players ?? (video.date ? formatDate(video.date) : "")}</span>
+                      <span className="inline-flex items-center gap-1"><Clock className="h-3 w-3" />{video.duration ?? "YouTube"}</span>
                     </div>
-                  </a>
-                );
-              })}
+                  </div>
+                </a>
+              ))}
             </div>
           )}
         </div>

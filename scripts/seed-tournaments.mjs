@@ -42,7 +42,6 @@ const tournaments = [
       { year: 2023, name: "Novak Djoković" },
       { year: 2022, name: "Rafael Nadal" },
     ],
-    imageQuery: "Melbourne tennis Australian Open",
   },
   {
     _id: "tour-roland-garros-2026",
@@ -62,7 +61,6 @@ const tournaments = [
       { year: 2023, name: "Novak Djoković" },
       { year: 2022, name: "Rafael Nadal" },
     ],
-    imageQuery: "Roland Garros Paris clay court",
   },
   {
     _id: "tour-wimbledon-2026",
@@ -82,7 +80,6 @@ const tournaments = [
       { year: 2023, name: "Carlos Alcaraz" },
       { year: 2022, name: "Novak Djoković" },
     ],
-    imageQuery: "Wimbledon grass court tennis London",
   },
   {
     _id: "tour-us-open-2026",
@@ -102,7 +99,6 @@ const tournaments = [
       { year: 2023, name: "Novak Djoković" },
       { year: 2022, name: "Carlos Alcaraz" },
     ],
-    imageQuery: "US Open New York Flushing Meadows tennis",
   },
 
   // ── ATP 1000 ─────────────────────────────────────────────────────────────────
@@ -118,7 +114,6 @@ const tournaments = [
     endDate: "2026-03-22",
     prize: "$8 800 000",
     currentChampion: "Carlos Alcaraz",
-    imageQuery: "Indian Wells Masters tennis desert",
   },
   {
     _id: "tour-miami-open-atp-2026",
@@ -132,7 +127,6 @@ const tournaments = [
     endDate: "2026-04-05",
     prize: "$8 800 000",
     currentChampion: "Jannik Sinner",
-    imageQuery: "Miami Open Hard Rock Stadium tennis",
   },
   {
     _id: "tour-monte-carlo-2026",
@@ -146,7 +140,6 @@ const tournaments = [
     endDate: "2026-04-12",
     prize: "$6 690 000",
     currentChampion: "Stefanos Tsitsipas",
-    imageQuery: "Monte Carlo clay tennis Monaco",
   },
   {
     _id: "tour-madrid-open-atp-2026",
@@ -160,7 +153,6 @@ const tournaments = [
     endDate: "2026-05-03",
     prize: "$7 705 000",
     currentChampion: "Carlos Alcaraz",
-    imageQuery: "Madrid Open clay tennis La Caja Magica",
   },
   {
     _id: "tour-rome-atp-2026",
@@ -174,7 +166,6 @@ const tournaments = [
     endDate: "2026-05-17",
     prize: "$7 705 000",
     currentChampion: "Novak Djoković",
-    imageQuery: "Rome Foro Italico clay tennis",
   },
   {
     _id: "tour-canada-atp-2026",
@@ -188,7 +179,6 @@ const tournaments = [
     endDate: "2026-08-16",
     prize: "$6 690 000",
     currentChampion: "Jannik Sinner",
-    imageQuery: "Montreal tennis hard court Canada",
   },
   {
     _id: "tour-cincinnati-atp-2026",
@@ -202,7 +192,6 @@ const tournaments = [
     endDate: "2026-08-23",
     prize: "$6 690 000",
     currentChampion: "Carlos Alcaraz",
-    imageQuery: "Cincinnati tennis hard court open",
   },
   {
     _id: "tour-shanghai-atp-2026",
@@ -216,7 +205,6 @@ const tournaments = [
     endDate: "2026-10-12",
     prize: "$8 800 000",
     currentChampion: "Jannik Sinner",
-    imageQuery: "Shanghai Qizhong tennis indoor",
   },
   {
     _id: "tour-paris-masters-2026",
@@ -230,7 +218,6 @@ const tournaments = [
     endDate: "2026-11-08",
     prize: "$6 690 000",
     currentChampion: "Holger Rune",
-    imageQuery: "Paris Bercy indoor tennis",
   },
 
   // ── ATP 500 ──────────────────────────────────────────────────────────────────
@@ -246,7 +233,6 @@ const tournaments = [
     endDate: "2026-02-15",
     prize: "$3 205 000",
     currentChampion: "Daniił Miedwiediew",
-    imageQuery: "Rotterdam indoor tennis court",
   },
   {
     _id: "tour-dubai-2026",
@@ -260,7 +246,6 @@ const tournaments = [
     endDate: "2026-03-01",
     prize: "$3 497 505",
     currentChampion: "Carlos Alcaraz",
-    imageQuery: "Dubai tennis tournament outdoor",
   },
   {
     _id: "tour-acapulco-2026",
@@ -274,7 +259,6 @@ const tournaments = [
     endDate: "2026-03-01",
     prize: "$3 205 000",
     currentChampion: "Alexander Zverev",
-    imageQuery: "Acapulco tennis Mexico outdoor",
   },
   {
     _id: "tour-barcelona-2026",
@@ -288,7 +272,6 @@ const tournaments = [
     endDate: "2026-04-26",
     prize: "$3 205 000",
     currentChampion: "Carlos Alcaraz",
-    imageQuery: "Barcelona clay court tennis Real Club",
   },
   {
     _id: "tour-halle-2026",
@@ -302,7 +285,6 @@ const tournaments = [
     endDate: "2026-06-21",
     prize: "$2 629 080",
     currentChampion: "Hubert Hurkacz",
-    imageQuery: "Halle grass court tennis Germany",
   },
   {
     _id: "tour-queens-2026",
@@ -316,7 +298,6 @@ const tournaments = [
     endDate: "2026-06-21",
     prize: "$2 629 080",
     currentChampion: "Carlos Alcaraz",
-    imageQuery: "Queens Club grass tennis London",
   },
   {
     _id: "tour-hamburg-2026",
@@ -330,7 +311,6 @@ const tournaments = [
     endDate: "2026-07-26",
     prize: "$2 252 990",
     currentChampion: "Alejandro Davidovich Fokina",
-    imageQuery: "Hamburg clay court tennis open",
   },
   {
     _id: "tour-washington-atp-2026",
@@ -344,7 +324,6 @@ const tournaments = [
     endDate: "2026-08-02",
     prize: "$2 629 080",
     currentChampion: "Felix Auger-Aliassime",
-    imageQuery: "Washington DC tennis outdoor hard",
   },
   {
     _id: "tour-tokyo-atp-2026",
@@ -358,7 +337,6 @@ const tournaments = [
     endDate: "2026-10-04",
     prize: "$2 252 990",
     currentChampion: "Taylor Fritz",
-    imageQuery: "Tokyo Japan indoor tennis",
   },
   {
     _id: "tour-vienna-2026",
@@ -372,7 +350,6 @@ const tournaments = [
     endDate: "2026-10-25",
     prize: "$3 205 000",
     currentChampion: "Daniił Miedwiediew",
-    imageQuery: "Vienna indoor tennis Wiener Stadthalle",
   },
   {
     _id: "tour-basel-2026",
@@ -386,7 +363,6 @@ const tournaments = [
     endDate: "2026-11-01",
     prize: "$3 205 000",
     currentChampion: "Novak Djoković",
-    imageQuery: "Basel Switzerland indoor tennis",
   },
 
   // ── ATP 250 (wybrane) ─────────────────────────────────────────────────────────
@@ -401,7 +377,6 @@ const tournaments = [
     startDate: "2025-12-29",
     endDate: "2026-01-04",
     prize: "$910 085",
-    imageQuery: "Brisbane tennis outdoor hard court",
   },
   {
     _id: "tour-doha-atp-2026",
@@ -414,7 +389,6 @@ const tournaments = [
     startDate: "2026-02-16",
     endDate: "2026-02-22",
     prize: "$1 052 600",
-    imageQuery: "Doha Qatar tennis outdoor",
   },
   {
     _id: "tour-buenos-aires-2026",
@@ -427,7 +401,6 @@ const tournaments = [
     startDate: "2026-02-09",
     endDate: "2026-02-15",
     prize: "$910 085",
-    imageQuery: "Buenos Aires clay tennis Argentina",
   },
   {
     _id: "tour-lyon-2026",
@@ -440,7 +413,6 @@ const tournaments = [
     startDate: "2026-05-18",
     endDate: "2026-05-24",
     prize: "$910 085",
-    imageQuery: "Lyon clay tennis France",
   },
   {
     _id: "tour-geneva-2026",
@@ -453,7 +425,6 @@ const tournaments = [
     startDate: "2026-05-18",
     endDate: "2026-05-24",
     prize: "$910 085",
-    imageQuery: "Geneva Switzerland clay tennis",
   },
   {
     _id: "tour-chengdu-2026",
@@ -466,7 +437,6 @@ const tournaments = [
     startDate: "2026-09-21",
     endDate: "2026-09-27",
     prize: "$1 052 600",
-    imageQuery: "Chengdu China outdoor tennis",
   },
   {
     _id: "tour-hangzhou-2026",
@@ -479,7 +449,6 @@ const tournaments = [
     startDate: "2026-09-21",
     endDate: "2026-09-27",
     prize: "$910 085",
-    imageQuery: "Hangzhou China tennis hard court",
   },
   {
     _id: "tour-antwerp-2026",
@@ -492,7 +461,6 @@ const tournaments = [
     startDate: "2026-10-12",
     endDate: "2026-10-18",
     prize: "$910 085",
-    imageQuery: "Antwerp Belgium indoor tennis",
   },
   {
     _id: "tour-stockholm-2026",
@@ -505,7 +473,6 @@ const tournaments = [
     startDate: "2026-10-12",
     endDate: "2026-10-18",
     prize: "$910 085",
-    imageQuery: "Stockholm indoor tennis Sweden",
   },
   {
     _id: "tour-atp-finals-2026",
@@ -519,7 +486,6 @@ const tournaments = [
     endDate: "2026-11-23",
     prize: "$15 000 000",
     currentChampion: "Jannik Sinner",
-    imageQuery: "Turin ATP Finals indoor tennis Pala Alpitour",
   },
 
   // ── WTA 1000 ─────────────────────────────────────────────────────────────────
@@ -535,7 +501,6 @@ const tournaments = [
     endDate: "2026-03-21",
     prize: "$8 800 000",
     currentChampion: "Iga Świątek",
-    imageQuery: "Indian Wells WTA tennis women desert",
   },
   {
     _id: "tour-miami-open-wta-2026",
@@ -549,7 +514,6 @@ const tournaments = [
     endDate: "2026-04-03",
     prize: "$8 800 000",
     currentChampion: "Aryna Sabalenka",
-    imageQuery: "Miami Open WTA women tennis Hard Rock",
   },
   {
     _id: "tour-madrid-wta-2026",
@@ -563,7 +527,6 @@ const tournaments = [
     endDate: "2026-05-03",
     prize: "$7 705 000",
     currentChampion: "Iga Świątek",
-    imageQuery: "Madrid WTA clay court tennis",
   },
   {
     _id: "tour-rome-wta-2026",
@@ -577,7 +540,6 @@ const tournaments = [
     endDate: "2026-05-17",
     prize: "$4 335 444",
     currentChampion: "Iga Świątek",
-    imageQuery: "Rome WTA clay tennis Foro Italico",
   },
   {
     _id: "tour-canada-wta-2026",
@@ -591,7 +553,6 @@ const tournaments = [
     endDate: "2026-08-16",
     prize: "$6 690 000",
     currentChampion: "Iga Świątek",
-    imageQuery: "Toronto WTA hard court tennis Canada",
   },
   {
     _id: "tour-cincinnati-wta-2026",
@@ -605,7 +566,6 @@ const tournaments = [
     endDate: "2026-08-22",
     prize: "$6 690 000",
     currentChampion: "Coco Gauff",
-    imageQuery: "Cincinnati WTA hard court tennis open",
   },
   {
     _id: "tour-wuhan-2026",
@@ -619,7 +579,6 @@ const tournaments = [
     endDate: "2026-10-11",
     prize: "$3 750 000",
     currentChampion: "Aryna Sabalenka",
-    imageQuery: "Wuhan China indoor tennis WTA",
   },
   {
     _id: "tour-beijing-2026",
@@ -633,7 +592,6 @@ const tournaments = [
     endDate: "2026-10-18",
     prize: "$8 800 000",
     currentChampion: "Iga Świątek",
-    imageQuery: "Beijing China Open tennis National Tennis Center",
   },
 
   // ── WTA 500 ──────────────────────────────────────────────────────────────────
@@ -648,7 +606,6 @@ const tournaments = [
     startDate: "2025-12-29",
     endDate: "2026-01-03",
     prize: "$703 580",
-    imageQuery: "Brisbane WTA tennis outdoor",
   },
   {
     _id: "tour-dubai-wta-2026",
@@ -662,7 +619,6 @@ const tournaments = [
     endDate: "2026-02-22",
     prize: "$1 011 585",
     currentChampion: "Iga Świątek",
-    imageQuery: "Dubai WTA women tennis outdoor",
   },
   {
     _id: "tour-doha-wta-2026",
@@ -675,7 +631,6 @@ const tournaments = [
     startDate: "2026-02-16",
     endDate: "2026-02-21",
     prize: "$1 011 585",
-    imageQuery: "Doha Qatar WTA tennis women",
   },
   {
     _id: "tour-stuttgart-2026",
@@ -689,7 +644,6 @@ const tournaments = [
     endDate: "2026-04-26",
     prize: "$703 580",
     currentChampion: "Iga Świątek",
-    imageQuery: "Stuttgart clay tennis Porsche Grand Prix",
   },
   {
     _id: "tour-strasbourg-2026",
@@ -702,7 +656,6 @@ const tournaments = [
     startDate: "2026-05-18",
     endDate: "2026-05-23",
     prize: "$703 580",
-    imageQuery: "Strasbourg France clay court tennis",
   },
   {
     _id: "tour-berlin-2026",
@@ -715,7 +668,6 @@ const tournaments = [
     startDate: "2026-06-15",
     endDate: "2026-06-20",
     prize: "$703 580",
-    imageQuery: "Berlin grass court WTA tennis",
   },
   {
     _id: "tour-eastbourne-2026",
@@ -728,7 +680,6 @@ const tournaments = [
     startDate: "2026-06-22",
     endDate: "2026-06-27",
     prize: "$703 580",
-    imageQuery: "Eastbourne grass court WTA tennis UK",
   },
   {
     _id: "tour-washington-wta-2026",
@@ -741,7 +692,6 @@ const tournaments = [
     startDate: "2026-07-27",
     endDate: "2026-08-02",
     prize: "$703 580",
-    imageQuery: "Washington DC WTA tennis outdoor",
   },
   {
     _id: "tour-tokyo-wta-2026",
@@ -754,7 +704,6 @@ const tournaments = [
     startDate: "2026-09-28",
     endDate: "2026-10-04",
     prize: "$703 580",
-    imageQuery: "Tokyo Japan WTA tennis indoor",
   },
   {
     _id: "tour-wta-finals-2026",
@@ -768,7 +717,6 @@ const tournaments = [
     endDate: "2026-11-01",
     prize: "$15 250 000",
     currentChampion: "Aryna Sabalenka",
-    imageQuery: "WTA Finals indoor tennis Riyadh",
   },
 ];
 

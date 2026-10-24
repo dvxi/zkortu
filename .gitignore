@@ -46,3 +46,7 @@ next-env.d.ts
 *.db
 .beads-credential-key
 .beads/proxieddb/
+
+# tests
+/test-results/
+/playwright-report/
