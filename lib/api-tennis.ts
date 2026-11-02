@@ -475,7 +475,7 @@ export function toMatch(m: RawMatch, countryIndex: Map<string, string | null>, s
     eventType,
     tour: tourFromEventType(eventType),
     isDoubles: /double/i.test(eventType),
-    isQualifying: qualifying,
+    isQualifying: qualifying || /qualif/i.test(m.tournament_round ?? ""),
     round: translateRound(m.tournament_round),
     date: (m.event_date ?? "").slice(0, 10),
     time: (m.event_time ?? "").slice(0, 5),

@@ -41,17 +41,19 @@ export function LiveTicker({ initial = [], interval = 60_000 }: Props) {
 
   return (
     <div className="border-b border-white/10 bg-ink text-ink-foreground" aria-label="Wyniki na żywo">
-      <div className="flex h-11 items-stretch">
+      <div className="flex h-11 min-w-0 items-stretch">
         <Link href="/wyniki-live" className="flex shrink-0 items-center gap-2 border-r border-white/10 px-4 text-[11px] font-black uppercase tracking-[0.2em] text-brand">
           <span className="live-dot" aria-hidden="true" />
           Live
         </Link>
-        <div className="relative flex-1 overflow-hidden">
+        <div className="ticker-viewport relative min-w-0 flex-1 overflow-x-auto overscroll-x-contain" tabIndex={0} aria-label="Przewijaj wyniki meczów">
           <div className="ticker-track flex h-full items-center" style={{ "--ticker-duration": duration } as React.CSSProperties}>
             {items.map((m, i) => (
               <Link
                 key={`${m.id}-${i}`}
-                href="/wyniki-live"
+                href={`/wyniki-live?match=${encodeURIComponent(m.id)}`}
+                aria-hidden={i >= live.length || undefined}
+                tabIndex={i >= live.length ? -1 : undefined}
                 className="flex h-full shrink-0 items-center gap-3 border-r border-white/10 px-5 transition-colors hover:bg-white/5"
               >
                 <span className="whitespace-nowrap text-[11px] font-medium text-white/45">{m.tournament}</span>

@@ -12,7 +12,7 @@ test.describe("navigation and layout", () => {
   test("home renders the orange header, news and ranking widgets", async ({ page }) => {
     await gotoReady(page, "/");
     await expect(page.getByRole("link", { name: /zkortu\.pl, strona główna/ })).toBeVisible();
-    await expect(page.getByRole("heading", { name: "Najnowsze aktualności" })).toBeVisible();
+    await expect(page.getByRole("region", { name: "Aktualności", exact: true })).toBeVisible();
     await expect(page.getByRole("heading", { name: /Ranking ATP/ })).toBeVisible();
     await expect(page.getByRole("heading", { name: /Ranking WTA/ })).toBeVisible();
     const header = page.locator("header").first();
@@ -44,7 +44,7 @@ test.describe("live ticker and live page", () => {
     for (const m of live.slice(0, 3)) {
       await expect(ticker.getByText(m.player1.name, { exact: true }).first()).toBeVisible();
     }
-    await expect(ticker.getByRole("link")).toHaveCount(live.length * 2 + 1);
+    await expect(ticker.locator("a")).toHaveCount(live.length * 2 + 1);
   });
 
   test("live page lists matches and opens details with sets", async ({ page }) => {
@@ -56,6 +56,7 @@ test.describe("live ticker and live page", () => {
       await expect(page.getByText(/nie trwa żaden mecz|Brak meczów/)).toBeVisible();
       return;
     }
+    await page.getByRole("button", { name: "Wszystkie", exact: true }).click();
     const cards = page.locator("button[data-match]");
     await expect(cards.first()).toBeVisible();
     expect(await cards.count()).toBeGreaterThan(0);

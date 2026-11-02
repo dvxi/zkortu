@@ -9,7 +9,7 @@ import { normalizeName } from "@/lib/countries";
 import { cn } from "@/lib/utils";
 import { Chip } from "@/components/site/Badges";
 import { Flag } from "@/components/site/Flag";
-import { MovementIcon, RankNumber } from "@/components/site/RankingWidget";
+import { RankNumber } from "@/components/site/RankingWidget";
 import { EmptyState, ErrorState, SkeletonRows } from "@/components/site/States";
 
 export interface RankingData {
@@ -134,7 +134,6 @@ export function RankingExplorer({ data, updatedAt }: Props) {
         <Info className="mt-0.5 h-4 w-4 shrink-0 text-brand-strong" />
         <p className="text-muted-foreground">
           <span className="font-semibold text-ink">Ranking {tour}</span>: oficjalna klasyfikacja singlowa z ostatnich 52 tygodni.
-          Strzałka w kolumnie „Zmiana” pokazuje kierunek ruchu względem poprzedniego notowania.
         </p>
       </div>
 
@@ -156,7 +155,6 @@ export function RankingExplorer({ data, updatedAt }: Props) {
                 <th scope="col" className="px-3 py-3">Zawodnik</th>
                 <th scope="col" className="hidden px-3 py-3 md:table-cell">Kraj</th>
                 <th scope="col" className="px-3 py-3 text-right">Punkty</th>
-                <th scope="col" className="w-20 px-3 py-3 text-center">Zmiana</th>
               </tr>
             </thead>
             <tbody>
@@ -183,11 +181,6 @@ export function RankingExplorer({ data, updatedAt }: Props) {
                     </td>
                     <td className="hidden px-3 py-2.5 text-sm text-muted-foreground md:table-cell">{p.country}</td>
                     <td className="tabular px-3 py-2.5 text-right text-sm font-bold text-ink">{formatPoints(p.points)}</td>
-                    <td className="px-3 py-2.5">
-                      <div className="flex justify-center">
-                        <MovementIcon movement={p.movement} />
-                      </div>
-                    </td>
                   </tr>
                 );
               })}

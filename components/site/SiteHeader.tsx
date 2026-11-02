@@ -3,7 +3,7 @@
 import Link from "next/link";
 import { usePathname } from "next/navigation";
 import { useState } from "react";
-import { Menu, X } from "lucide-react";
+import { CalendarDays, Radio, Home, Trophy, Menu, X } from "lucide-react";
 import { Sheet, SheetContent, SheetTrigger, SheetTitle } from "@/components/ui/sheet";
 import { Button } from "@/components/ui/button";
 import { NAV_LINKS } from "@/lib/constants";
@@ -24,6 +24,7 @@ export function SiteHeader({ logoUrl }: Props) {
   const [open, setOpen] = useState(false);
 
   return (
+    <>
     <header className="sticky top-0 z-50 bg-brand text-brand-foreground shadow-[0_1px_0_0_rgba(0,0,0,0.12)]">
       <div className="mx-auto flex h-16 max-w-7xl items-center justify-between gap-6 px-4 sm:px-6">
         <Link href="/" className="flex shrink-0 items-center rounded-md focus-visible:outline-2 focus-visible:outline-ink" aria-label="zkortu.pl, strona główna">
@@ -109,5 +110,19 @@ export function SiteHeader({ logoUrl }: Props) {
         </Sheet>
       </div>
     </header>
+    <nav aria-label="Dolna nawigacja" className="mobile-bottom-nav fixed inset-x-0 bottom-0 z-40 grid grid-cols-5 border-t border-border bg-card pb-[env(safe-area-inset-bottom)] shadow-lg lg:hidden">
+      {[
+        { href: "/kalendarz", label: "Kalendarz", Icon: CalendarDays },
+        { href: "/wyniki-live", label: "Wyniki live", Icon: Radio },
+        { href: "/", label: "Home", Icon: Home },
+        { href: "/ranking", label: "Rankingi", Icon: Trophy },
+      ].map(({ href, label, Icon }) => (
+        <Link key={href} href={href} aria-current={isActive(pathname, href) ? "page" : undefined} className={cn("flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] font-bold", isActive(pathname, href) ? "text-brand-strong" : "text-muted-foreground")}>
+          <Icon className="h-5 w-5" />{label}
+        </Link>
+      ))}
+      <button onClick={() => setOpen(true)} aria-expanded={open} aria-label="Otwórz pełne menu" className="flex min-h-16 flex-col items-center justify-center gap-1 text-[10px] font-bold text-muted-foreground"><Menu className="h-5 w-5" />Menu</button>
+    </nav>
+    </>
   );
 }

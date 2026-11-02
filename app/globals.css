@@ -214,10 +214,12 @@
   .anim-delay-5 { animation-delay: 400ms; }
   .anim-grow-x { animation: growX 0.7s cubic-bezier(0.16, 1, 0.3, 1) both; animation-delay: 300ms; }
   .ticker-track { animation: ticker var(--ticker-duration, 60s) linear infinite; }
-  .ticker-track:hover { animation-play-state: paused; }
+  .ticker-viewport:hover .ticker-track,
+  .ticker-viewport:focus-within .ticker-track { animation-play-state: paused; }
 }
 
 .ticker-track {
+  flex-shrink: 0;
   width: max-content;
   will-change: transform;
 }
@@ -266,3 +268,8 @@
 .prose-article figcaption { font-size: 0.8125rem; color: var(--muted-foreground); margin-top: 0.5rem; }
 .prose-article .embed { margin: 2rem auto; max-width: 560px; }
 .prose-article .embed iframe { max-width: 100%; }
+
+@media (max-width: 1023px) {
+  .home-section { order: var(--mobile-order, 0); }
+  body:has(.mobile-bottom-nav) { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); }
+}

@@ -1,6 +1,6 @@
 "use client";
 
-import { useCallback, useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { Clock, RefreshCw, Trophy } from "lucide-react";
 import type { LiveMatch, Tour } from "@/lib/types";
 import { todayIso, formatDate } from "@/lib/format";
@@ -206,7 +206,7 @@ function MatchDetail({ match }: { match: LiveMatch }) {
   );
 }
 
-export function LiveScoresClient({ initial = null }: { initial?: LiveMatch[] | null }) {
+export function LiveScoresClient({ initial = null, requestedMatchId }: { initial?: LiveMatch[] | null; requestedMatchId?: string }) {
   const [live, setLive] = useState<LiveMatch[] | null>(initial);
   const [day, setDay] = useState<LiveMatch[]>([]);
   const [error, setError] = useState<string | null>(null);
@@ -214,10 +214,12 @@ export function LiveScoresClient({ initial = null }: { initial?: LiveMatch[] | n
   const [refreshing, setRefreshing] = useState(false);
   const [updatedAt, setUpdatedAt] = useState<Date | null>(null);
   const [showAll, setShowAll] = useState(false);
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const [status, setStatus] = useState<StatusFilter>(requestedMatchId ? "all" : "live");
   const [tourFilter, setTourFilter] = useState<TourFilter>("all");
-  const [selectedId, setSelectedId] = useState<string | null>(null);
+  const [selectedId, setSelectedId] = useState<string | null>(requestedMatchId ?? null);
   const [sheetOpen, setSheetOpen] = useState(false);
+
+  const openedRequested = useRef(false);
 
   const scope = showAll ? "all" : "tour";
 
@@ -292,6 +294,17 @@ export function LiveScoresClient({ initial = null }: { initial?: LiveMatch[] | n
 
   const selected = visible.find((m) => m.id === selectedId) ?? visible[0] ?? null;
 
+  useEffect(() => {
+    if (!requestedMatchId || openedRequested.current || !matches.some((m) => m.id === requestedMatchId)) return;
+    const timer = setTimeout(() => {
+      openedRequested.current = true;
+      setSelectedId(requestedMatchId);
+      if (!window.matchMedia("(min-width: 1024px)").matches) setSheetOpen(true);
+      document.getElementById(`match-${requestedMatchId}`)?.scrollIntoView({ block: "center" });
+    }, 0);
+    return () => clearTimeout(timer);
+  }, [matches, requestedMatchId]);
+
   function select(id: string) {
     setSelectedId(id);
     if (typeof window !== "undefined" && !window.matchMedia("(min-width: 1024px)").matches) setSheetOpen(true);
@@ -365,11 +378,12 @@ export function LiveScoresClient({ initial = null }: { initial?: LiveMatch[] | n
                     return (
                       <button
                         key={m.id}
+                        id={`match-${m.id}`}
                         data-match={m.id}
                         onClick={() => select(m.id)}
                         aria-pressed={isSelected}
                         className={cn(
-                          "w-full rounded-xl border p-3.5 text-left transition-all",
+                          "scroll-mt-24 w-full rounded-xl border p-3.5 text-left transition-all",
                           isSelected ? "border-ink bg-ink text-ink-foreground shadow-md" : "border-border bg-card hover:border-ink/30",
                         )}
                       >
@@ -384,7 +398,7 @@ export function LiveScoresClient({ initial = null }: { initial?: LiveMatch[] | n
 
           {/* Desktop detail */}
           <div className="hidden lg:col-span-3 lg:block">
-            <div className="sticky top-24">
+            <div className="sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain rounded-2xl">
               {selected && <div key={selected.id} className="anim-switch"><MatchDetail match={selected} /></div>}
             </div>
           </div>
@@ -393,7 +407,7 @@ export function LiveScoresClient({ initial = null }: { initial?: LiveMatch[] | n
 
       {/* Mobile detail sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="bottom" className="max-h-[88vh] overflow-y-auto rounded-t-2xl p-4 lg:hidden">
+        <SheetContent side="bottom" className="max-h-[88dvh] overflow-y-auto rounded-t-2xl p-4 lg:hidden">
           <SheetTitle className="sr-only">Szczegóły meczu</SheetTitle>
           {selected && <MatchDetail match={selected} />}
         </SheetContent>

@@ -62,6 +62,12 @@ describe("toMatch (verified against live API samples)", () => {
     expect(translateRound(undefined)).toBe("");
   });
 
+  it("detects qualifiers even when only the round carries the qualification marker", () => {
+    const match = toMatch({ ...live[0], tournament_name: "ATP Vienna", tournament_round: "ATP Vienna - Qualification - Final" }, countryIndex);
+    expect(match.isQualifying).toBe(true);
+    expect(match.round).toBe("Finał");
+  });
+
   it("detects tours and doubles from event types", () => {
     expect(tourFromEventType("Atp Singles")).toBe("ATP");
     expect(tourFromEventType("Wta Doubles")).toBe("WTA");

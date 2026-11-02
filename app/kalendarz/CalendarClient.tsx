@@ -30,7 +30,7 @@ const DAYS_PL = ["Pon", "Wt", "Śr", "Czw", "Pt", "Sob", "Nd"];
 const MONTHS_PL = ["Styczeń", "Luty", "Marzec", "Kwiecień", "Maj", "Czerwiec", "Lipiec", "Sierpień", "Wrzesień", "Październik", "Listopad", "Grudzień"];
 
 type View = "calendar" | "list";
-type StatusFilter = "all" | TournamentStatus;
+type StatusFilter = "all" | "active" | TournamentStatus;
 type TourFilter = "all" | "ATP" | "WTA" | "Grand Slam";
 
 function isoDate(y: number, m: number, d: number) {
@@ -130,8 +130,8 @@ function MatchList({ state, emptyText }: { state: MatchesState; emptyText: strin
   if (state.error) return <p className="text-sm text-muted-foreground">{state.error}</p>;
   if (state.matches.length === 0) return <p className="text-sm text-muted-foreground">{emptyText}</p>;
   const byRound = new Map<string, LiveMatch[]>();
-  for (const m of state.matches) {
-    const key = m.round || "Mecze";
+  for (const m of [...state.matches].sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`))) {
+    const key = `${m.date} · ${m.isQualifying ? "Kwalifikacje · " : ""}${m.round || "Mecze"}`;
     byRound.set(key, [...(byRound.get(key) ?? []), m]);
   }
   return (
@@ -166,7 +166,7 @@ export function CalendarClient({ tournaments }: Props) {
   const todayDate = parseIsoDate(TODAY);
 
   const [view, setView] = useState<View>("calendar");
-  const [status, setStatus] = useState<StatusFilter>("all");
+  const [status, setStatus] = useState<StatusFilter>("active");
   const [tourFilter, setTourFilter] = useState<TourFilter>("all");
   const [calYear, setCalYear] = useState(todayDate.getFullYear());
   const [calMonth, setCalMonth] = useState(todayDate.getMonth());
@@ -209,7 +209,7 @@ export function CalendarClient({ tournaments }: Props) {
 
   // ── List view ─────────────────────────────────────────────────────────────
   const listItems = tournaments
-    .filter((t) => (status === "all" || t.status === status) && matchesTour(t, tourFilter))
+    .filter((t) => (status === "all" || (status === "active" ? t.status !== "completed" : t.status === status)) && matchesTour(t, tourFilter))
     .sort((a, b) => a.startDate.localeCompare(b.startDate));
   const grouped = listItems.reduce<Record<string, Tournament[]>>((acc, t) => {
     const key = formatDate(t.startDate, { month: "long", year: "numeric" });
@@ -232,6 +232,7 @@ export function CalendarClient({ tournaments }: Props) {
           {view === "list" && (
             <>
               <span className="mx-1 hidden h-5 w-px bg-border sm:block" />
+              <Chip active={status === "active"} onClick={() => setStatus("active")}>Trwające i nadchodzące</Chip>
               <Chip active={status === "all"} onClick={() => setStatus("all")}>Cały sezon</Chip>
               <Chip active={status === "live"} onClick={() => setStatus("live")}><span className="live-dot" aria-hidden="true" /> Trwające</Chip>
               <Chip active={status === "upcoming"} onClick={() => setStatus("upcoming")}>Nadchodzące</Chip>
@@ -394,7 +395,7 @@ export function CalendarClient({ tournaments }: Props) {
 
       {/* Tournament sheet */}
       <Sheet open={Boolean(selectedTournament)} onOpenChange={(open) => !open && openTournament(null)}>
-        <SheetContent className="w-full overflow-y-auto p-0 sm:max-w-xl">
+        <SheetContent key={selectedId} id="tournament-panel" initialFocus={() => document.getElementById("tournament-panel")} className="w-full overflow-y-auto p-0 sm:max-w-xl">
           {selectedTournament && (
             <>
               <div className="relative h-48 w-full shrink-0 overflow-hidden">

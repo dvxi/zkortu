@@ -1,4 +1,4 @@
-import { describe, expect, it } from "vitest";
+import { describe, expect, it, vi } from "vitest";
 import { addDaysIso, formatDateRange, pluralPl, slugify, timeAgo } from "@/lib/format";
 
 describe("format", () => {
@@ -23,6 +23,17 @@ describe("format", () => {
     expect(pluralPl(3, "artykuł", "artykuły", "artykułów")).toBe("artykuły");
     expect(pluralPl(12, "artykuł", "artykuły", "artykułów")).toBe("artykułów");
     expect(pluralPl(22, "artykuł", "artykuły", "artykułów")).toBe("artykuły");
+  });
+
+  it("handles publication hour boundaries and invalid timestamps", () => {
+    vi.spyOn(Date, "now").mockReturnValue(Date.parse("2026-11-02T12:00:00Z"));
+    try {
+      expect(timeAgo("2026-11-02T11:05:00Z")).toBe("55 min temu");
+      expect(timeAgo("2026-11-02T11:00:00Z")).toBe("1 godz. temu");
+      expect(timeAgo("2026-11-01T20:00:00Z")).toBe("16 godz. temu");
+      expect(timeAgo("2026-11-02T13:00:00Z")).toBe("przed chwilą");
+      expect(timeAgo("invalid")).toBe("");
+    } finally { vi.restoreAllMocks(); }
   });
 
   it("gives relative time", () => {

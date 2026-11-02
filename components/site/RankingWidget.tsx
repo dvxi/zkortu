@@ -51,7 +51,6 @@ export function RankingWidget({ tour, players, error, limit = 10, className }: P
               <Flag flag={p.flag} country={p.country} className="w-5 text-center text-base" />
               <span className="min-w-0 flex-1 truncate font-semibold text-ink">{p.name}</span>
               <span className="tabular text-xs text-muted-foreground">{formatPoints(p.points)}</span>
-              <MovementIcon movement={p.movement} />
             </li>
           ))}
         </ol>

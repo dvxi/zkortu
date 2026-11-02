@@ -20,7 +20,8 @@ export const metadata: Metadata = {
   alternates: { canonical: "/wyniki-live" },
 };
 
-export default async function WynikiLivePage() {
+export default async function WynikiLivePage({ searchParams }: { searchParams: Promise<{ match?: string }> }) {
+  const { match } = await searchParams;
   const initial = await loadInitial();
   return (
     <div className="mx-auto max-w-7xl px-4 py-10 sm:px-6">
@@ -30,7 +31,7 @@ export default async function WynikiLivePage() {
         title="Wyniki live"
         description="Mecze w trakcie oraz plan dnia. Wyniki odświeżają się automatycznie co 30 sekund."
       />
-      <LiveScoresClient initial={initial} />
+      <LiveScoresClient key={match ?? "live"} initial={initial} requestedMatchId={match} />
     </div>
   );
 }

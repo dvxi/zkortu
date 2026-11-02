@@ -29,23 +29,23 @@ export async function generateMetadata({ params }: { params: Promise<{ id: strin
   const description = article.seoDescription || article.excerpt;
   const og = imageUrl(article.mainImage, 1200, 630);
   return {
-    title: article.title,
+    title: article.seoTitle || article.title,
     description,
     alternates: { canonical: `/aktualnosci/${article.id}` },
     openGraph: {
       type: "article",
-      title: article.title,
+      title: article.seoTitle || article.title,
       description,
       url: `${SITE_URL}/aktualnosci/${article.id}`,
       siteName: SITE_NAME,
       locale: "pl_PL",
-      publishedTime: article.date,
+      publishedTime: article.publishedAt || article.date,
       modifiedTime: article.updatedAt ?? undefined,
       authors: [article.author],
       tags: article.tags ?? undefined,
       images: og ? [{ url: og, width: 1200, height: 630, alt: article.mainImage?.alt || article.title }] : undefined,
     },
-    twitter: { card: "summary_large_image", title: article.title, description, images: og ? [og] : undefined },
+    twitter: { card: "summary_large_image", title: article.seoTitle || article.title, description, images: og ? [og] : undefined },
   };
 }
 
@@ -66,7 +66,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
     "@type": "NewsArticle",
     headline: article.title,
     description: article.excerpt,
-    datePublished: article.date,
+    datePublished: article.publishedAt || article.date,
     dateModified: article.updatedAt ?? article.date,
     author: [{ "@type": "Person", name: article.author }],
     publisher: { "@type": "Organization", name: SITE_NAME, url: SITE_URL },

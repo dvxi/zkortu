@@ -1,4 +1,6 @@
 import { defineArrayMember, defineField, defineType } from "sanity";
+import { AutoSlugInput } from "../AutoSlugInput";
+import { slugify, todayIso } from "../../lib/format";
 import { ARTICLE_CATEGORIES } from "../../lib/constants";
 
 const imageFields = [
@@ -16,14 +18,22 @@ export const articleType = defineType({
     { name: "meta", title: "Autor i źródło" },
     { name: "seo", title: "SEO" },
   ],
+  initialValue: (_params, context) => ({
+    author: context.currentUser?.name || context.currentUser?.email || "",
+    date: todayIso(),
+    publishedAt: new Date().toISOString(),
+  }),
   fields: [
     defineField({ name: "title", title: "Tytuł", type: "string", group: "content", validation: (r) => r.required().max(140) }),
+    defineField({ name: "homeTitle", title: "Krótki tytuł na stronę główną", type: "string", group: "content", description: "Opcjonalny. Pełny tytuł w artykule pozostaje bez zmian.", validation: (r) => r.max(140) }),
     defineField({
       name: "slug",
       title: "Adres URL (slug)",
       type: "slug",
       group: "content",
-      options: { source: "title", maxLength: 96 },
+      options: { source: "title", maxLength: 96, slugify: (value) => slugify(value).slice(0, 96).replace(/-+$/, "") },
+      components: { input: AutoSlugInput },
+      description: "Generowany automatycznie po wpisaniu tytułu. Późniejsza zmiana tytułu nie zmienia istniejącego URL.",
       validation: (r) => r.required(),
     }),
     defineField({
@@ -136,6 +146,7 @@ export const articleType = defineType({
     defineField({ name: "author", title: "Autor", type: "string", group: "meta", validation: (r) => r.required() }),
     defineField({ name: "authorRole", title: "Rola autora", type: "string", group: "meta", description: "np. Redaktor naczelny" }),
     defineField({ name: "articleSource", title: "Źródło artykułu", type: "string", group: "meta", description: "np. PAP, ATP Tour, własne" }),
+    defineField({ name: "publishedAt", title: "Dokładny czas publikacji", type: "datetime", group: "meta", description: "Domyślnie bieżąca data i godzina utworzenia wpisu. Przy odłożonej publikacji ustaw właściwy termin. Służy do etykiet typu 55 min temu." }),
     defineField({ name: "date", title: "Data publikacji", type: "date", group: "meta", validation: (r) => r.required() }),
     defineField({ name: "updatedAt", title: "Data aktualizacji", type: "date", group: "meta", description: "Uzupełnij, gdy artykuł został zaktualizowany po publikacji." }),
     defineField({
@@ -147,6 +158,7 @@ export const articleType = defineType({
       validation: (r) => r.min(1).max(60),
     }),
 
+    defineField({ name: "seoTitle", title: "Tytuł SEO", type: "string", group: "seo", description: "Opcjonalny tytuł dla wyszukiwarek i udostępnień. Domyślnie pełny tytuł artykułu.", validation: (r) => r.max(70).warning() }),
     defineField({
       name: "seoDescription",
       title: "Opis SEO (meta description)",

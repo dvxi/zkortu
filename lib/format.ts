@@ -57,7 +57,8 @@ export function formatPoints(n: number): string {
 
 /** Relative label: "przed chwilą", "5 min temu", "3 godz. temu", "2 dni temu" */
 export function timeAgo(iso: string): string {
-  const diff = Date.now() - new Date(iso).getTime();
+  if (!iso || Number.isNaN(new Date(iso).getTime())) return "";
+  const diff = Math.max(0, Date.now() - new Date(iso).getTime());
   const m = Math.floor(diff / 60_000);
   if (m < 1) return "przed chwilą";
   if (m < 60) return `${m} min temu`;

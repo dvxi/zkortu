@@ -65,6 +65,8 @@ export interface SanityArticleCard {
   _id: string;
   id: string;
   title: string;
+  homeTitle?: string | null;
+  publishedAt?: string | null;
   excerpt: string;
   category: string;
   date: string;
@@ -81,12 +83,15 @@ export interface SanityArticleCard {
 export interface SanityArticle extends SanityArticleCard {
   content: PortableTextBlock[];
   seoDescription?: string | null;
+  seoTitle?: string | null;
 }
 
 const CARD_FIELDS = `
   _id,
   "id": slug.current,
   title,
+  homeTitle,
+  publishedAt,
   excerpt,
   category,
   date,
@@ -100,7 +105,7 @@ const CARD_FIELDS = `
   tags
 `;
 
-const ARTICLE_FIELDS = `${CARD_FIELDS}, content, seoDescription`;
+const ARTICLE_FIELDS = `${CARD_FIELDS}, content, seoDescription, seoTitle`;
 
 function estimateReadTime(content: PortableTextBlock[] | undefined): number {
   if (!content?.length) return 1;
@@ -118,11 +123,27 @@ function normalizeCard<T extends SanityArticleCard>(a: T, content?: PortableText
 
 export async function getAllArticles(limit = 200): Promise<SanityArticleCard[]> {
   const res = await sanityFetch<SanityArticleCard[]>(
-    `*[_type == "article" && defined(slug.current)] | order(date desc, _createdAt desc)[0...$limit] { ${CARD_FIELDS} }`,
+    `*[_type == "article" && defined(slug.current)] | order(coalesce(publishedAt, date) desc, _createdAt desc)[0...$limit] { ${CARD_FIELDS} }`,
     { limit },
     { revalidate: 60, tags: ["articles"] },
   );
   return (res ?? []).map((a) => normalizeCard(a));
+}
+
+export async function getFeaturedArticle(): Promise<SanityArticleCard | null> {
+  const article = await sanityFetch<SanityArticleCard>(
+    `*[_type == "article" && featured == true && defined(slug.current)] | order(_updatedAt desc)[0] { ${CARD_FIELDS} }`,
+    {}, { revalidate: 60, tags: ["articles"] },
+  );
+  return article ? normalizeCard(article) : null;
+}
+
+export async function getEditorialArticles(tag?: string, category?: string): Promise<SanityArticleCard[]> {
+  const articles = await sanityFetch<SanityArticleCard[]>(
+    `*[_type == "article" && defined(slug.current) && ($tag == "" || $tag in tags) && ($category == "" || category == $category)] | order(coalesce(publishedAt, date) desc)[0...6] { ${CARD_FIELDS} }`,
+    { tag: tag || "", category: category || "" }, { revalidate: 60, tags: ["articles"] },
+  );
+  return (articles ?? []).map((a) => normalizeCard(a));
 }
 
 export async function getArticleBySlug(slug: string): Promise<SanityArticle | null> {
@@ -305,7 +326,7 @@ export interface SanityVideo {
 
 export async function getAllVideos(): Promise<SanityVideo[]> {
   const res = await sanityFetch<SanityVideo[]>(
-    `*[_type == "video"] | order(date desc, _createdAt desc) { "id": _id, title, youtubeUrl, description, players, tournament, date, duration, category }`,
+    `*[_type == "video"] | order(coalesce(publishedAt, date) desc, _createdAt desc) { "id": _id, title, youtubeUrl, description, players, tournament, date, duration, category }`,
     {},
     { revalidate: 120, tags: ["videos"] },
   );
@@ -442,6 +463,9 @@ export async function getAllPageSlugs(): Promise<string[]> {
 // ─── Site Settings ───────────────────────────────────────────────────────────
 
 export interface SiteSettings {
+  featuredArticle?: SanityArticleCard | null;
+  mobileHomeOrder?: string[] | null;
+  editorialSections?: Array<{ _key: string; title: string; tag?: string; category?: string }> | null;
   email?: string | null;
   phone?: string | null;
   address?: string | null;
@@ -463,6 +487,8 @@ export interface SiteSettings {
 export async function getSiteSettings(): Promise<SiteSettings | null> {
   const res = await sanityFetch<SiteSettings | null>(
     `*[_type == "siteSettings"][0] {
+      "featuredArticle": featuredArticle->{ ${CARD_FIELDS} },
+      "mobileHomeOrder": mobileHomeOrder[].section, editorialSections[] { _key, title, tag, category },
       email, phone, address, twitter, facebook, instagram, youtube,
       officeHours[] { day, hours, isOpen },
       responseTime, footerDescription,
@@ -471,7 +497,7 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
       commentsEnabled, commentsAutoApprove
     }`,
     {},
-    { revalidate: 120, tags: ["settings"] },
+    { revalidate: 120, tags: ["settings", "articles"] },
   );
   return res;
 }

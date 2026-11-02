@@ -1,7 +1,6 @@
 import Link from "next/link";
-import { Clock } from "lucide-react";
 import type { SanityArticleCard } from "@/lib/sanity";
-import { formatDate } from "@/lib/format";
+import { PublicationTime } from "./PublicationTime";
 import { cn } from "@/lib/utils";
 import { CoverImage } from "./CoverImage";
 
@@ -10,10 +9,12 @@ interface Props {
   variant?: "featured" | "card" | "row";
   priority?: boolean;
   className?: string;
+  home?: boolean;
 }
 
-export function ArticleCard({ article, variant = "card", priority, className }: Props) {
+export function ArticleCard({ article, variant = "card", priority, className, home = false }: Props) {
   const href = `/aktualnosci/${article.id}`;
+  const title = home ? article.homeTitle || article.title : article.title;
   const alt = article.mainImage?.alt || article.title;
 
   if (variant === "featured") {
@@ -26,14 +27,10 @@ export function ArticleCard({ article, variant = "card", priority, className }: 
             <span className="mb-3 inline-block rounded-md bg-brand px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-brand-foreground">
               {article.category}
             </span>
-            <h3 className="text-balance text-2xl font-black leading-tight text-white sm:text-3xl">{article.title}</h3>
-            <p className="mt-2 hidden max-w-2xl text-sm text-white/75 sm:line-clamp-2">{article.excerpt}</p>
+            <h3 className="text-balance text-lg font-black leading-tight text-white sm:text-3xl">{title}</h3>
             <div className="mt-3 flex flex-wrap items-center gap-x-4 gap-y-1 text-xs text-white/65">
               <span className="font-semibold text-white/85">{article.author}</span>
-              <span>{formatDate(article.date)}</span>
-              <span className="inline-flex items-center gap-1">
-                <Clock className="h-3 w-3" /> {article.readTime} min
-              </span>
+              <PublicationTime date={article.date} publishedAt={article.publishedAt} />
             </div>
           </div>
         </div>
@@ -44,16 +41,16 @@ export function ArticleCard({ article, variant = "card", priority, className }: 
   if (variant === "row") {
     return (
       <Link href={href} className={cn("group flex gap-3 rounded-xl p-2 transition-colors hover:bg-muted", className)}>
-        <div className="relative w-28 shrink-0 overflow-hidden rounded-lg sm:w-32">
+        <div className="relative aspect-video w-28 shrink-0 self-start overflow-hidden rounded-lg sm:w-32">
           <div className="relative aspect-video">
             <CoverImage image={article.mainImage} alt={alt} width={320} sizes="128px" className="object-cover transition-transform duration-500 group-hover:scale-105" placeholderLabel={article.category} />
           </div>
         </div>
         <div className="min-w-0 flex-1">
           <span className="text-[10px] font-black uppercase tracking-[0.16em] text-brand-strong">{article.category}</span>
-          <p className="mt-0.5 line-clamp-2 text-sm font-bold leading-snug text-ink transition-opacity group-hover:opacity-70">{article.title}</p>
+          <p className="mt-0.5 line-clamp-2 text-sm font-bold leading-snug text-ink transition-opacity group-hover:opacity-70">{title}</p>
           <span className="mt-1 block text-xs text-muted-foreground">
-            {formatDate(article.date, { day: "numeric", month: "short" })} · {article.readTime} min
+            <PublicationTime date={article.date} publishedAt={article.publishedAt} />
           </span>
         </div>
       </Link>
@@ -75,12 +72,12 @@ export function ArticleCard({ article, variant = "card", priority, className }: 
         </span>
       </div>
       <div className="flex flex-1 flex-col p-4">
-        <h3 className="line-clamp-2 text-base font-bold leading-snug text-ink transition-opacity group-hover:opacity-70">{article.title}</h3>
+        <h3 className="line-clamp-2 text-base font-bold leading-snug text-ink transition-opacity group-hover:opacity-70">{title}</h3>
         <p className="mt-2 line-clamp-2 text-sm leading-relaxed text-muted-foreground">{article.excerpt}</p>
         <div className="mt-auto flex items-center justify-between pt-4 text-xs text-muted-foreground">
           <span className="truncate font-medium text-ink/80">{article.author}</span>
           <span className="inline-flex shrink-0 items-center gap-1">
-            <Clock className="h-3 w-3" /> {article.readTime} min
+            <PublicationTime date={article.date} publishedAt={article.publishedAt} />
           </span>
         </div>
       </div>

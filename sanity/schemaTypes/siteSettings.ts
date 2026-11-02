@@ -1,3 +1,4 @@
+import { ARTICLE_CATEGORIES } from "../../lib/constants";
 import { defineArrayMember, defineField, defineType } from "sanity";
 
 export const siteSettingsType = defineType({
@@ -5,11 +6,30 @@ export const siteSettingsType = defineType({
   title: "Ustawienia serwisu",
   type: "document",
   groups: [
+    { name: "home", title: "Strona główna" },
     { name: "contact", title: "Kontakt", default: true },
     { name: "brand", title: "Marka i stopka" },
     { name: "features", title: "Funkcje" },
   ],
   fields: [
+    defineField({ name: "featuredArticle", title: "Główny artykuł", type: "reference", to: [{ type: "article" }], group: "home", description: "Wybierz opublikowany artykuł. Wybór ma pierwszeństwo przed polem Wyróżniony w artykule." }),
+    defineField({ name: "mobileHomeOrder", title: "Kolejność sekcji na telefonie", type: "array", group: "home", description: "Przeciągnij pozycje. Pominięte sekcje pojawią się na końcu.",
+      initialValue: ["news", "wta", "editorial", "tournaments", "atp", "video"].map((section) => ({ _type: "homeSection", _key: section, section })),
+      of: [defineArrayMember({ type: "object", name: "homeSection", fields: [
+        defineField({ name: "section", title: "Sekcja", type: "string", validation: (r) => r.required(), options: { list: [
+          { title: "Newsy", value: "news" }, { title: "Ranking WTA", value: "wta" },
+          { title: "Więcej z redakcji / sekcje tematyczne", value: "editorial" }, { title: "Turnieje", value: "tournaments" },
+          { title: "Ranking ATP", value: "atp" }, { title: "Wideo", value: "video" },
+        ] } }),
+      ], preview: { select: { section: "section" }, prepare: ({ section }) => ({ title: ({ news: "Newsy", wta: "Ranking WTA", editorial: "Sekcje redakcyjne", tournaments: "Turnieje", atp: "Ranking ATP", video: "Wideo" } as Record<string, string>)[section] || section }) } })],
+      validation: (r) => r.unique(),
+    }),
+    defineField({ name: "editorialSections", title: "Sekcje tematyczne", type: "array", group: "home", description: "Zastępują sekcję Więcej z redakcji. Jeśli podasz tag i kategorię, artykuł musi spełniać oba warunki.", of: [defineArrayMember({ type: "object", fields: [
+      defineField({ name: "title", title: "Nagłówek", type: "string", validation: (r) => r.required() }),
+      defineField({ name: "tag", title: "Tag (dokładna nazwa)", type: "string" }),
+      defineField({ name: "category", title: "Kategoria", type: "string", options: { list: [...ARTICLE_CATEGORIES] } }),
+    ], preview: { select: { title: "title", subtitle: "tag" } } })] }),
+
     // ── Dane kontaktowe ───────────────────────────────────────────────────────
     defineField({ name: "email", title: "E-mail kontaktowy", type: "string", group: "contact", validation: (r) => r.required() }),
     defineField({ name: "phone", title: "Telefon", type: "string", group: "contact" }),
