@@ -36,6 +36,7 @@ export const NAV_LINKS = [
   { href: "/aktualnosci", label: "Aktualności" },
   { href: "/wyniki-live", label: "Wyniki live", live: true },
   { href: "/ranking", label: "Ranking" },
+  { href: "/zawodnicy", label: "Zawodnicy" },
   { href: "/kalendarz", label: "Kalendarz" },
   { href: "/wideo", label: "Wideo" },
   { href: "/kontakt", label: "Kontakt" },

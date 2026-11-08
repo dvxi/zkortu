@@ -1,6 +1,7 @@
 import type { Metadata } from "next";
 import { Suspense } from "react";
 import { ApiTennisError, describeApiError, fetchRankings } from "@/lib/api-tennis";
+import { getPlayerProfileIndex } from "@/lib/sanity";
 import type { Player } from "@/lib/types";
 import { PageHeader } from "@/components/site/PageHeader";
 import { SkeletonRows } from "@/components/site/States";
@@ -28,7 +29,7 @@ async function load(tour: "ATP" | "WTA"): Promise<{ players: Player[]; total: nu
 }
 
 export default async function RankingPage() {
-  const [atp, wta] = await Promise.all([load("ATP"), load("WTA")]);
+  const [atp, wta, profiles] = await Promise.all([load("ATP"), load("WTA"), getPlayerProfileIndex()]);
   const data: RankingData = { ATP: atp, WTA: wta };
   const updatedAt = new Date().toISOString();
 
@@ -40,7 +41,7 @@ export default async function RankingPage() {
         description="Pełne listy rankingowe singlistów i singlistek. Dane publikowane przez ATP i WTA w każdy poniedziałek."
       />
       <Suspense fallback={<SkeletonRows rows={12} />}>
-        <RankingExplorer data={data} updatedAt={updatedAt} />
+        <RankingExplorer data={data} updatedAt={updatedAt} profiles={profiles} />
       </Suspense>
     </div>
   );

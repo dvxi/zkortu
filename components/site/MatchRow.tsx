@@ -1,4 +1,6 @@
+import Link from "next/link";
 import type { LiveMatch, MatchSet } from "@/lib/types";
+import type { PlayerProfileLink } from "@/lib/sanity";
 import { cn } from "@/lib/utils";
 import { Flag } from "./Flag";
 import { MatchStatusBadge } from "./Badges";
@@ -12,10 +14,12 @@ interface PlayerLineProps {
   match: LiveMatch;
   side: 1 | 2;
   inverted?: boolean;
+  profiles?: Record<string, PlayerProfileLink>;
 }
 
-function PlayerLine({ match, side, inverted }: PlayerLineProps) {
+function PlayerLine({ match, side, inverted, profiles }: PlayerLineProps) {
   const player = side === 1 ? match.player1 : match.player2;
+  const profile = profiles?.[player.key];
   const isWinner = match.winner === side;
   const isServing = match.status === "live" && match.server === side;
   const game = match.currentGame ? match.currentGame.split(/\s*-\s*/)[side - 1] : null;
@@ -23,7 +27,11 @@ function PlayerLine({ match, side, inverted }: PlayerLineProps) {
     <div className="flex items-center justify-between gap-3">
       <span className={cn("flex min-w-0 items-center gap-2 text-sm", isWinner ? "font-black" : "font-semibold", match.status === "finished" && !isWinner && match.winner && "opacity-60")}>
         <Flag flag={player.flag} country={player.countryCode} className="w-5 shrink-0 text-center text-base" />
-        <span className="truncate">{player.name}</span>
+        {profile ? (
+          <Link href={`/zawodnicy/${profile.slug}`} className="truncate underline-offset-2 hover:text-brand-strong hover:underline">{player.name}</Link>
+        ) : (
+          <span className="truncate">{player.name}</span>
+        )}
         {isServing && <span className={cn("h-1.5 w-1.5 shrink-0 rounded-full", inverted ? "bg-brand" : "bg-brand-strong")} aria-label="Serwuje" />}
       </span>
       <span className="flex shrink-0 items-center gap-1">
@@ -58,10 +66,12 @@ interface Props {
   selected?: boolean;
   showTournament?: boolean;
   className?: string;
+  /** API player key → profile; names become links. Do not use inside another link. */
+  profiles?: Record<string, PlayerProfileLink>;
 }
 
 /** Two-line scoreboard row. Wrap in a button or div; uses `selected` for inverted styling. */
-export function MatchRow({ match, selected, showTournament = true, className }: Props) {
+export function MatchRow({ match, selected, showTournament = true, className, profiles }: Props) {
   return (
     <div className={cn("space-y-1.5", className)}>
       {showTournament && (
@@ -74,8 +84,8 @@ export function MatchRow({ match, selected, showTournament = true, className }: 
           <MatchStatusBadge status={match.status} label={match.statusLabel} time={match.time} className={selected ? "text-white/80" : undefined} />
         </div>
       )}
-      <PlayerLine match={match} side={1} inverted={selected} />
-      <PlayerLine match={match} side={2} inverted={selected} />
+      <PlayerLine match={match} side={1} inverted={selected} profiles={profiles} />
+      <PlayerLine match={match} side={2} inverted={selected} profiles={profiles} />
     </div>
   );
 }

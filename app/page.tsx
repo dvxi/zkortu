@@ -4,7 +4,7 @@ import Link from "next/link";
 import { ArrowRight, PlayCircle } from "lucide-react";
 import { ApiTennisError, describeApiError, fetchLiveScores, fetchRankings } from "@/lib/api-tennis";
 import type { LiveMatch } from "@/lib/types";
-import { getAllArticles, getAllVideos, getTournaments, getSiteSettings, getFeaturedArticle, getEditorialArticles } from "@/lib/sanity";
+import { getAllArticles, getAllVideos, getTournaments, getSiteSettings, getFeaturedArticle, getEditorialArticles, getPlayerProfileIndex } from "@/lib/sanity";
 import type { Player } from "@/lib/types";
 import { videoCategoryLabel } from "@/lib/constants";
 import { ArticleCard } from "@/components/site/ArticleCard";
@@ -60,7 +60,7 @@ async function loadLive(): Promise<LiveMatch[]> {
 }
 
 export default async function HomePage() {
-  const [articles, tournaments, atp, wta, videos, live, settings, markedFeatured, polish] = await Promise.all([
+  const [articles, tournaments, atp, wta, videos, live, settings, markedFeatured, polish, profiles] = await Promise.all([
     getAllArticles(12),
     getTournaments(),
     loadRanking("ATP"),
@@ -70,6 +70,7 @@ export default async function HomePage() {
     getSiteSettings(),
     getFeaturedArticle(),
     loadPolishMatches(),
+    getPlayerProfileIndex(),
   ]);
 
   const featured = settings?.featuredArticle?.id ? settings.featuredArticle : markedFeatured ?? articles[0] ?? null;
@@ -179,7 +180,7 @@ export default async function HomePage() {
           <aside className="contents lg:block lg:space-y-8">
             {polish && (
               <div className="home-section" style={mobileStyle("polish")}>
-                <PolishMatchesWidget day={polish} />
+                <PolishMatchesWidget day={polish} profiles={profiles} />
               </div>
             )}
 
@@ -194,8 +195,8 @@ export default async function HomePage() {
               </section>
             )}
 
-            <div className="home-section" style={mobileStyle("atp")}><RankingWidget tour="ATP" players={atp.players} error={atp.error} /></div>
-            <div className="home-section" style={mobileStyle("wta")}><RankingWidget tour="WTA" players={wta.players} error={wta.error} /></div>
+            <div className="home-section" style={mobileStyle("atp")}><RankingWidget tour="ATP" players={atp.players} error={atp.error} profiles={profiles} /></div>
+            <div className="home-section" style={mobileStyle("wta")}><RankingWidget tour="WTA" players={wta.players} error={wta.error} profiles={profiles} /></div>
 
             <Link href="/wyniki-live" className="order-last group flex items-center justify-between rounded-2xl bg-ink p-5 text-ink-foreground transition-colors hover:bg-ink-muted">
               <div>

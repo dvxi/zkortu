@@ -44,3 +44,20 @@ W **Ustawienia serwisu → Strona główna** można ustawić kolejność sekcji 
 **Mecze Polek i Polaków** (na górze prawej kolumny) wypełniają się same z danych API: wszystkie dzisiejsze mecze Polaków z rankingów ATP i WTA, na każdym poziomie (ATP, WTA, Challenger, ITF), single i deble. Gdy dziś nie ma meczów, pokazuje się plan na jutro, a gdy jutro też nic, sekcja znika. Deblistów bez rankingu singlowego (np. Jan Zieliński) na razie tu nie ma.
 
 **Sekcje tematyczne** zastępują blok „Więcej z redakcji”. Dodaj nagłówek (np. „Iga Świątek”), dokładną nazwę tagu i opcjonalną kategorię. Każda sekcja pokazuje do sześciu najnowszych pasujących artykułów. Kolejność sekcji zmienisz przez przeciąganie; pusta lista przywraca „Więcej z redakcji”. Po zmianach opublikuj ustawienia.
+
+## Zawodnicy (profile)
+
+Profile są w **Zawodnicy** (podział: Polki i Polacy, WTA, ATP). Na start system założył profil dla każdego z top 100 ATP i WTA oraz dla wszystkich Polek i Polaków z rankingu. Co poniedziałek dopisuje nowych, którzy weszli do top 100. Istniejących profili nigdy nie zmienia ani nie usuwa.
+
+Ranking, wiek, statystyki sezon po sezonie, tytuły i ostatnie mecze pobierają się same. Redakcja uzupełnia tylko to, czego nie ma w danych:
+
+- **Zdjęcie** (z autorem). Bez zdjęcia wyświetlają się inicjały. Najlepiej kwadratowe lub pionowe, twarz w środku; punkt skupienia ustawisz w edytorze zdjęcia.
+- **Dane zawodnika**: wzrost, ręka, bekhend, miejsce urodzenia, trener, najwyższy ranking w karierze (z datą). Puste pola się nie wyświetlają.
+- **Linki**: strona www i social media.
+- **Krótki opis**: kilka zdań na górze profilu.
+
+**Tag artykułów** łączy profil z newsami: artykuły z tym tagiem pokazują się w profilu. Domyślnie to imię i nazwisko z polskimi znakami (np. „Iga Świątek”), więc w artykułach używaj dokładnie tej formy.
+
+Nie zmieniaj **Adresu strony** ani **Klucza zawodnika w API-Tennis** po publikacji. Pierwszy psuje linki, drugi odłącza statystyki.
+
+Aby dodać zawodnika spoza listy (np. deblistę Jana Zielińskiego): utwórz nowy profil, wpisz imię i nazwisko, tour, kraj i klucz z API-Tennis (podeśle go administrator). Polacy dodani w ten sposób pojawiają się też w boxie „Mecze Polek i Polaków”.

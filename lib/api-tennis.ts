@@ -22,6 +22,9 @@ import type {
   MatchStats,
   MatchStatus,
   Player,
+  PlayerApiProfile,
+  PlayerSeason,
+  PlayerTitle,
   Surface,
   Tour,
   Tournament,
@@ -550,13 +553,13 @@ export interface FixtureQuery {
   playerKey?: string;
 }
 
-export async function fetchFixtures(q: FixtureQuery, scope: LiveScope = "all"): Promise<LiveMatch[]> {
+export async function fetchFixtures(q: FixtureQuery, scope: LiveScope = "all", cache: CacheMode = { revalidate: 120, tags: ["fixtures"] }): Promise<LiveMatch[]> {
   const params: Record<string, string> = { method: "get_fixtures", date_start: q.dateStart, date_stop: q.dateStop };
   if (q.tournamentKey) params.tournament_key = q.tournamentKey;
   if (q.eventTypeKey) params.event_type_key = q.eventTypeKey;
   if (q.playerKey) params.player_key = q.playerKey;
   const [raw, countryIndex, surfaceIndex] = await Promise.all([
-    apiFetch<RawMatch>(params, { revalidate: 120, tags: ["fixtures"] }),
+    apiFetch<RawMatch>(params, cache),
     getPlayerCountryIndex(),
     getSurfaceIndex(),
   ]);
@@ -617,9 +620,9 @@ export async function fetchMatchesForDay(dateIso: string, scope: LiveScope = "to
  * given ISO country code. Countries come from the singles rankings, so doubles
  * specialists without a singles ranking are not recognised.
  */
-export function hasPlayerFrom(m: RawMatch, countryCode: string, countryIndex: Map<string, string | null>): boolean {
+export function hasPlayerFrom(m: RawMatch, countryCode: string, countryIndex: Map<string, string | null>, extraKeys: ReadonlySet<string> = new Set()): boolean {
   const keys = [m.first_player_key, m.second_player_key, m.first_player_dp1_key, m.first_player_dp2_key, m.second_player_dp1_key, m.second_player_dp2_key];
-  return keys.some((k) => str(k) !== "" && countryIndex.get(str(k)) === countryCode);
+  return keys.some((k) => str(k) !== "" && (countryIndex.get(str(k)) === countryCode || extraKeys.has(str(k))));
 }
 
 /**
@@ -628,13 +631,112 @@ export function hasPlayerFrom(m: RawMatch, countryCode: string, countryIndex: Ma
  * fetch-cache limit, so it is fetched uncached and callers cache the filtered
  * result (see lib/polish-matches.ts).
  */
-export async function fetchMatchesWithCountry(dateIso: string, countryCode: string): Promise<LiveMatch[]> {
+export async function fetchMatchesWithCountry(dateIso: string, countryCode: string, extraKeys: string[] = []): Promise<LiveMatch[]> {
+  const extra = new Set(extraKeys);
   const [raw, countryIndex, surfaceIndex] = await Promise.all([
     apiFetch<RawMatch>({ method: "get_fixtures", date_start: dateIso, date_stop: dateIso }, "no-store"),
     getPlayerCountryIndex(),
     getSurfaceIndex(),
   ]);
-  return sortMatches(raw.filter((m) => hasPlayerFrom(m, countryCode, countryIndex)).map((m) => toMatch(m, countryIndex, surfaceIndex)));
+  return sortMatches(raw.filter((m) => hasPlayerFrom(m, countryCode, countryIndex, extra)).map((m) => toMatch(m, countryIndex, surfaceIndex)));
+}
+
+// ─── Player profiles (/zawodnicy) ────────────────────────────────────────────
+
+interface RawPlayerStat {
+  season?: Str;
+  type?: string;
+  rank?: Str;
+  titles?: Str;
+  matches_won?: Str;
+  matches_lost?: Str;
+  hard_won?: Str;
+  hard_lost?: Str;
+  clay_won?: Str;
+  clay_lost?: Str;
+  grass_won?: Str;
+  grass_lost?: Str;
+}
+
+interface RawPlayerTournament {
+  name?: string;
+  season?: Str;
+  type?: string;
+  surface?: string;
+}
+
+interface RawPlayer {
+  player_key: Str;
+  player_name?: string;
+  player_full_name?: string;
+  player_country?: string;
+  player_bday?: string;
+  stats?: RawPlayerStat[];
+  tournaments?: RawPlayerTournament[];
+}
+
+const int = (v: Str): number => parseInt(str(v), 10) || 0;
+
+/** "31.05.2001" → "2001-05-31"; the feed uses 01.01.1970 for "unknown". */
+function parseBirthDate(v: string | undefined): string | null {
+  const m = (v ?? "").match(/^(\d{1,2})\.(\d{1,2})\.(\d{4})$/);
+  if (!m || Number(m[3]) < 1975) return null;
+  return `${m[3]}-${m[2].padStart(2, "0")}-${m[1].padStart(2, "0")}`;
+}
+
+export function toPlayerProfile(p: RawPlayer): PlayerApiProfile {
+  // the feed has junk seasons ("", "0", "1") for some players; keep real years only
+  const isYear = (v: Str) => /^\d{4}$/.test(str(v));
+  const singles: PlayerSeason[] = (p.stats ?? [])
+    .filter((s) => s.type === "singles" && isYear(s.season))
+    .map((s) => ({
+      season: int(s.season),
+      rank: int(s.rank) || null,
+      titles: int(s.titles),
+      won: int(s.matches_won),
+      lost: int(s.matches_lost),
+      hard: [int(s.hard_won), int(s.hard_lost)] as [number, number],
+      clay: [int(s.clay_won), int(s.clay_lost)] as [number, number],
+      grass: [int(s.grass_won), int(s.grass_lost)] as [number, number],
+    }))
+    // the feed sometimes adds an empty duplicate row for a season: keep the fuller one
+    .reduce<PlayerSeason[]>((acc, s) => {
+      const i = acc.findIndex((x) => x.season === s.season);
+      if (i === -1) acc.push(s);
+      else if (s.won + s.lost > acc[i].won + acc[i].lost) acc[i] = s;
+      return acc;
+    }, [])
+    .sort((a, b) => b.season - a.season);
+  const singlesTitles: PlayerTitle[] = (p.tournaments ?? [])
+    .filter((t) => t.type === "singles" && isYear(t.season) && t.name)
+    .map((t) => ({ name: str(t.name), season: int(t.season), surface: toSurface(t.surface) }))
+    .sort((a, b) => b.season - a.season);
+  const country = countryFromName(p.player_country);
+  return {
+    key: str(p.player_key),
+    name: str(p.player_name),
+    fullName: str(p.player_full_name) || str(p.player_name),
+    countryCode: country.code,
+    birthDate: parseBirthDate(p.player_bday),
+    singles,
+    singlesTitles,
+  };
+}
+
+/** Bio, season-by-season singles stats and titles; changes slowly, cached 12 h. */
+export async function fetchPlayerProfile(playerKey: string): Promise<PlayerApiProfile | null> {
+  const raw = await apiFetch<RawPlayer>({ method: "get_players", player_key: playerKey }, { revalidate: 43200, tags: ["player-profiles", `player:${playerKey}`] });
+  return raw[0] ? toPlayerProfile(raw[0]) : null;
+}
+
+/** The player's matches from the last 60 days and the next 7 (newest first), cached 1 h. */
+export async function fetchPlayerMatches(playerKey: string, today: string): Promise<LiveMatch[]> {
+  const matches = await fetchFixtures(
+    { dateStart: addDaysIso(today, -60), dateStop: addDaysIso(today, 7), playerKey },
+    "all",
+    { revalidate: 3600, tags: ["player-matches", `player:${playerKey}`] },
+  );
+  return matches.sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`));
 }
 
 // ─── Calendar ↔ API matching ─────────────────────────────────────────────────

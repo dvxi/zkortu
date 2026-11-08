@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasPlayerFrom, matchTournamentInIndex, sortMatches, toMatch, toSurface, tourFromEventType, translateRound, type RawTournament } from "@/lib/api-tennis";
+import { hasPlayerFrom, matchTournamentInIndex, toPlayerProfile, sortMatches, toMatch, toSurface, tourFromEventType, translateRound, type RawTournament } from "@/lib/api-tennis";
 import { countryFromName } from "@/lib/countries";
 import { fixture } from "../helpers";
 
@@ -161,5 +161,41 @@ describe("hasPlayerFrom (homepage box with Polish players)", () => {
     const same = toMatch({ event_key: 3, event_type_type: "Wta Doubles", first_player_key: "pair-1", first_player_dp1_key: keyA, first_player_dp2_key: keyB, second_player_key: "pair-2", second_player_dp1_key: keyA, second_player_dp2_key: keyOther }, countryIndex);
     expect(same.player1.countryCode).toBe(codeA);
     expect(same.player2.countryCode).toBeNull();
+  });
+});
+
+describe("toPlayerProfile (get_players)", () => {
+  const raw = {
+    player_key: 1910,
+    player_name: "I. Swiatek",
+    player_country: "Poland",
+    player_bday: "31.05.2001",
+    stats: [
+      { season: "2025", type: "singles", rank: "2", titles: "3", matches_won: "64", matches_lost: "17", hard_won: "40", hard_lost: "10" },
+      { season: "2025", type: "singles", rank: "", titles: "0", matches_won: "0", matches_lost: "0" },
+      { season: "2024", type: "doubles", rank: "41", matches_won: "5", matches_lost: "2" },
+      { season: "1", type: "singles", rank: "", matches_won: "3", matches_lost: "1" },
+    ],
+    tournaments: [
+      { name: "Wimbledon", season: "2025", type: "singles", surface: "grass" },
+      { name: "Doha", season: "2024", type: "doubles", surface: "hard" },
+    ],
+  };
+
+  it("keeps one row per real season (the fuller duplicate), singles only", () => {
+    const p = toPlayerProfile(raw);
+    expect(p.singles).toHaveLength(1);
+    expect(p.singles[0]).toMatchObject({ season: 2025, rank: 2, won: 64, lost: 17, titles: 3, hard: [40, 10] });
+  });
+
+  it("parses birth date, country and singles titles", () => {
+    const p = toPlayerProfile(raw);
+    expect(p.birthDate).toBe("2001-05-31");
+    expect(p.countryCode).toBe("PL");
+    expect(p.singlesTitles).toEqual([{ name: "Wimbledon", season: 2025, surface: "Grass" }]);
+  });
+
+  it("treats the feed's 01.01.1970 placeholder as an unknown birth date", () => {
+    expect(toPlayerProfile({ ...raw, player_bday: "01.01.1970" }).birthDate).toBeNull();
   });
 });

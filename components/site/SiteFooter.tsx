@@ -11,6 +11,7 @@ const columns = [
       { href: "/wyniki-live", label: "Wyniki na żywo" },
       { href: "/ranking", label: "Ranking ATP" },
       { href: "/ranking?tour=wta", label: "Ranking WTA" },
+      { href: "/zawodnicy", label: "Zawodnicy" },
       { href: "/kalendarz", label: "Kalendarz turniejów" },
     ],
   },

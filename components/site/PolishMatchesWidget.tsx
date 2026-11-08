@@ -1,7 +1,7 @@
 import Link from "next/link";
 import { ArrowRight } from "lucide-react";
 import type { PolishMatchesDay } from "@/lib/polish-matches";
-import type { LiveMatch } from "@/lib/types";
+import type { PlayerProfileLink } from "@/lib/sanity";
 import { formatDateShort, pluralPl } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { MatchRow } from "./MatchRow";
@@ -10,13 +10,12 @@ interface Props {
   day: PolishMatchesDay;
   limit?: number;
   className?: string;
+  /** API player key → profile; player names link to profiles */
+  profiles?: Record<string, PlayerProfileLink>;
 }
 
-// /wyniki-live opens a match by id only for ATP/WTA (its default scope)
-const linkable = (m: LiveMatch) => m.tour === "ATP" || m.tour === "WTA";
-
 /** Homepage box: today's (or tomorrow's) matches with a Polish player, every level. */
-export function PolishMatchesWidget({ day, limit = 8, className }: Props) {
+export function PolishMatchesWidget({ day, limit = 8, className, profiles }: Props) {
   const rows = day.matches.slice(0, limit);
   const more = day.matches.length - rows.length;
   const anyLive = day.matches.some((m) => m.status === "live");
@@ -32,16 +31,8 @@ export function PolishMatchesWidget({ day, limit = 8, className }: Props) {
       </div>
       <ul className="divide-y divide-border">
         {rows.map((m) => (
-          <li key={m.id}>
-            {linkable(m) ? (
-              <Link href={`/wyniki-live?match=${encodeURIComponent(m.id)}`} className="block px-4 py-3 transition-colors hover:bg-muted/50">
-                <MatchRow match={m} />
-              </Link>
-            ) : (
-              <div className="px-4 py-3">
-                <MatchRow match={m} />
-              </div>
-            )}
+          <li key={m.id} className="px-4 py-3">
+            <MatchRow match={m} profiles={profiles} />
           </li>
         ))}
       </ul>

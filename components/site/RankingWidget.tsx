@@ -1,6 +1,7 @@
 import Link from "next/link";
 import { ArrowRight, Minus, Trophy, TrendingDown, TrendingUp } from "lucide-react";
 import type { Player, RankMovement } from "@/lib/types";
+import type { PlayerProfileLink } from "@/lib/sanity";
 import { formatPoints } from "@/lib/format";
 import { cn } from "@/lib/utils";
 import { Flag } from "./Flag";
@@ -23,9 +24,11 @@ interface Props {
   error?: string | null;
   limit?: number;
   className?: string;
+  /** API player key → profile (link + editorial name) */
+  profiles?: Record<string, PlayerProfileLink>;
 }
 
-export function RankingWidget({ tour, players, error, limit = 10, className }: Props) {
+export function RankingWidget({ tour, players, error, limit = 10, className, profiles = {} }: Props) {
   const rows = players.slice(0, limit);
   const href = `/ranking?tour=${tour.toLowerCase()}`;
   return (
@@ -49,7 +52,11 @@ export function RankingWidget({ tour, players, error, limit = 10, className }: P
             <li key={`${p.rank}-${p.playerKey}`} className={cn("flex items-center gap-3 px-4 py-2 text-sm", p.rank <= 3 && "bg-brand-soft/60")}>
               <RankNumber rank={p.rank} className="w-5 text-right text-xs" />
               <Flag flag={p.flag} country={p.country} className="w-5 text-center text-base" />
-              <span className="min-w-0 flex-1 truncate font-semibold text-ink">{p.name}</span>
+              {profiles[p.playerKey] ? (
+                <Link href={`/zawodnicy/${profiles[p.playerKey].slug}`} className="min-w-0 flex-1 truncate font-semibold text-ink underline-offset-2 hover:text-brand-strong hover:underline">{profiles[p.playerKey].name}</Link>
+              ) : (
+                <span className="min-w-0 flex-1 truncate font-semibold text-ink">{p.name}</span>
+              )}
               <span className="tabular text-xs text-muted-foreground">{formatPoints(p.points)}</span>
             </li>
           ))}

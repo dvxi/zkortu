@@ -185,3 +185,35 @@ export const tourLabels: Record<Tour, string> = {
   Junior: "Juniorzy",
   Other: "Inne",
 };
+
+// ─── Player profiles (/zawodnicy) ────────────────────────────────────────────
+
+export interface PlayerSeason {
+  season: number;
+  /** ranking at the end of the season (current ranking for the season in progress) */
+  rank: number | null;
+  titles: number;
+  won: number;
+  lost: number;
+  hard: [number, number];
+  clay: [number, number];
+  grass: [number, number];
+}
+
+export interface PlayerTitle {
+  name: string;
+  season: number;
+  surface?: Surface;
+}
+
+/** What API-Tennis knows about a player (get_players). */
+export interface PlayerApiProfile {
+  key: string;
+  name: string;
+  fullName: string;
+  countryCode: string | null;
+  /** ISO date or null */
+  birthDate: string | null;
+  singles: PlayerSeason[];
+  singlesTitles: PlayerTitle[];
+}

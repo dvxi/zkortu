@@ -501,3 +501,63 @@ export async function getSiteSettings(): Promise<SiteSettings | null> {
   );
   return res;
 }
+
+// ─── Players (/zawodnicy) ────────────────────────────────────────────────────
+
+export interface PlayerSummary {
+  _id: string;
+  name: string;
+  slug: string;
+  tour: "ATP" | "WTA";
+  /** empty for players competing as neutrals */
+  countryCode?: string | null;
+  apiPlayerKey: string;
+  photo?: SanityImage | null;
+}
+
+export interface SanityPlayer extends PlayerSummary {
+  tag?: string | null;
+  bio?: string | null;
+  height?: number | null;
+  plays?: "right" | "left" | null;
+  backhand?: "one" | "two" | null;
+  birthplace?: string | null;
+  coach?: string | null;
+  careerHigh?: number | null;
+  careerHighDate?: string | null;
+  website?: string | null;
+  instagram?: string | null;
+  x?: string | null;
+  facebook?: string | null;
+}
+
+const PLAYER_SUMMARY_FIELDS = `_id, name, "slug": slug.current, tour, countryCode, apiPlayerKey, photo`;
+
+export async function getAllPlayers(): Promise<PlayerSummary[]> {
+  const res = await sanityFetch<PlayerSummary[]>(
+    `*[_type == "player" && defined(slug.current) && defined(apiPlayerKey)] | order(name asc) { ${PLAYER_SUMMARY_FIELDS} }`,
+    {},
+    { revalidate: 300, tags: ["players"] },
+  );
+  return res ?? [];
+}
+
+export async function getPlayerBySlug(slug: string): Promise<SanityPlayer | null> {
+  return sanityFetch<SanityPlayer>(
+    `*[_type == "player" && slug.current == $slug][0] { ${PLAYER_SUMMARY_FIELDS}, tag, bio, height, plays, backhand, birthplace, coach, careerHigh, careerHighDate, website, instagram, x, facebook }`,
+    { slug },
+    { revalidate: 300, tags: ["players"] },
+  );
+}
+
+export interface PlayerProfileLink {
+  slug: string;
+  /** editorial spelling (Polish diacritics, correct name order) */
+  name: string;
+}
+
+/** API-Tennis player key → profile, for linking names in rankings and match lists. */
+export async function getPlayerProfileIndex(): Promise<Record<string, PlayerProfileLink>> {
+  const players = await getAllPlayers();
+  return Object.fromEntries(players.map((p) => [p.apiPlayerKey, { slug: p.slug, name: p.name }]));
+}

@@ -1,9 +1,11 @@
 "use client";
 
+import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
 import { useRouter, useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Info, Search, Timer } from "lucide-react";
 import type { Player } from "@/lib/types";
+import type { PlayerProfileLink } from "@/lib/sanity";
 import { formatDateTime, formatPoints, pluralPl } from "@/lib/format";
 import { normalizeName } from "@/lib/countries";
 import { cn } from "@/lib/utils";
@@ -23,9 +25,11 @@ const PAGE_SIZE = 100;
 interface Props {
   data: RankingData;
   updatedAt: string;
+  /** API player key → profile (link + editorial name) */
+  profiles?: Record<string, PlayerProfileLink>;
 }
 
-export function RankingExplorer({ data, updatedAt }: Props) {
+export function RankingExplorer({ data, updatedAt, profiles = {} }: Props) {
   const router = useRouter();
   const searchParams = useSearchParams();
   const tourParam = (searchParams.get("tour") ?? "atp").toUpperCase();
@@ -175,7 +179,11 @@ export function RankingExplorer({ data, updatedAt }: Props) {
                     <td className="px-3 py-2.5">
                       <div className="flex items-center gap-2.5">
                         <Flag flag={p.flag} country={p.country} className="w-5 text-center text-lg" />
-                        <span className="text-sm font-semibold text-ink">{p.name}</span>
+                        {profiles[p.playerKey] ? (
+                          <Link href={`/zawodnicy/${profiles[p.playerKey].slug}`} className="text-sm font-semibold text-ink underline-offset-2 hover:text-brand-strong hover:underline">{profiles[p.playerKey].name}</Link>
+                        ) : (
+                          <span className="text-sm font-semibold text-ink">{p.name}</span>
+                        )}
                         {isPole && <span className="rounded bg-brand px-1.5 py-0.5 text-[10px] font-black uppercase text-brand-foreground">PL</span>}
                       </div>
                     </td>

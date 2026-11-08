@@ -40,6 +40,19 @@ const structure: StructureResolver = (S) =>
             ]),
         ),
       S.documentTypeListItem("tournament").title("Kalendarz turniejów"),
+      S.listItem()
+        .title("Zawodnicy")
+        .child(
+          S.list()
+            .title("Zawodnicy")
+            .items([
+              S.listItem().title("Polki i Polacy").child(S.documentList().title("Polki i Polacy").filter('_type == "player" && countryCode == "PL"').defaultOrdering([{ field: "name", direction: "asc" }])),
+              S.listItem().title("WTA").child(S.documentList().title("WTA").filter('_type == "player" && tour == "WTA"').defaultOrdering([{ field: "name", direction: "asc" }])),
+              S.listItem().title("ATP").child(S.documentList().title("ATP").filter('_type == "player" && tour == "ATP"').defaultOrdering([{ field: "name", direction: "asc" }])),
+              S.divider(),
+              S.documentTypeListItem("player").title("Wszyscy"),
+            ]),
+        ),
       S.documentTypeListItem("video").title("Wideo"),
       S.documentTypeListItem("page").title("Strony informacyjne"),
       S.divider(),

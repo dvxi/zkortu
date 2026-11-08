@@ -15,6 +15,7 @@ const TAGS_BY_TYPE: Record<string, string[]> = {
   page: ["pages"],
   siteSettings: ["settings"],
   juniorPlayer: ["juniors"],
+  player: ["players"],
 };
 
 export async function POST(req: NextRequest) {
