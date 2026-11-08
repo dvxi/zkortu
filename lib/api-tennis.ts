@@ -129,8 +129,13 @@ interface RawMatch {
   event_time?: string;
   event_first_player?: string;
   first_player_key?: Str;
+  /** doubles: the pair has its own key; these are the two partners' player keys */
+  first_player_dp1_key?: Str;
+  first_player_dp2_key?: Str;
   event_second_player?: string;
   second_player_key?: Str;
+  second_player_dp1_key?: Str;
+  second_player_dp2_key?: Str;
   event_final_result?: string | null;
   event_game_result?: string | null;
   event_serve?: string | null;
@@ -452,9 +457,15 @@ function parseStats(m: RawMatch): MatchStats | null {
   return any ? out : null;
 }
 
-function toMatchPlayer(name: string | undefined, key: Str, countryIndex: Map<string, string | null>): MatchPlayer {
+/** A doubles pair shows a flag only when both partners come from the same country. */
+function pairCountry(partnerKeys: Str[], countryIndex: Map<string, string | null>): string | null {
+  const codes = partnerKeys.map((k) => countryIndex.get(str(k)) ?? null);
+  return codes.length === 2 && codes[0] && codes[0] === codes[1] ? codes[0] : null;
+}
+
+function toMatchPlayer(name: string | undefined, key: Str, countryIndex: Map<string, string | null>, partnerKeys: Str[] = []): MatchPlayer {
   const k = str(key);
-  const code = countryIndex.get(k) ?? null;
+  const code = countryIndex.get(k) ?? (partnerKeys.length ? pairCountry(partnerKeys, countryIndex) : null);
   const c = countryFromName(code ?? "");
   return { name: (name ?? "").trim() || "—", key: k, countryCode: code, flag: code ? c.flag : "" };
 }
@@ -479,8 +490,8 @@ export function toMatch(m: RawMatch, countryIndex: Map<string, string | null>, s
     round: translateRound(m.tournament_round),
     date: (m.event_date ?? "").slice(0, 10),
     time: (m.event_time ?? "").slice(0, 5),
-    player1: toMatchPlayer(m.event_first_player, m.first_player_key, countryIndex),
-    player2: toMatchPlayer(m.event_second_player, m.second_player_key, countryIndex),
+    player1: toMatchPlayer(m.event_first_player, m.first_player_key, countryIndex, [m.first_player_dp1_key, m.first_player_dp2_key].filter((k) => str(k))),
+    player2: toMatchPlayer(m.event_second_player, m.second_player_key, countryIndex, [m.second_player_dp1_key, m.second_player_dp2_key].filter((k) => str(k))),
     sets: parseSets(m.scores),
     currentGame: status === "live" && game !== "-" ? game : "",
     server: status === "live" ? serve : null,
@@ -597,6 +608,33 @@ export async function fetchMatchesForDay(dateIso: string, scope: LiveScope = "to
   const matches = await fetchFixtures({ dateStart: dateIso, dateStop: dateIso }, "all");
   dayCache.set(cacheKey, { at: Date.now(), matches });
   return matches;
+}
+
+// ─── Matches with a given nationality (homepage "Mecze Polek i Polaków") ─────
+
+/**
+ * True when any player in the match (singles player or doubles partner) has the
+ * given ISO country code. Countries come from the singles rankings, so doubles
+ * specialists without a singles ranking are not recognised.
+ */
+export function hasPlayerFrom(m: RawMatch, countryCode: string, countryIndex: Map<string, string | null>): boolean {
+  const keys = [m.first_player_key, m.second_player_key, m.first_player_dp1_key, m.first_player_dp2_key, m.second_player_dp1_key, m.second_player_dp2_key];
+  return keys.some((k) => str(k) !== "" && countryIndex.get(str(k)) === countryCode);
+}
+
+/**
+ * All of a day's matches (every level, singles and doubles) with a player from
+ * `countryCode`. One upstream request; the response (~3 MB) is above Next's 2 MB
+ * fetch-cache limit, so it is fetched uncached and callers cache the filtered
+ * result (see lib/polish-matches.ts).
+ */
+export async function fetchMatchesWithCountry(dateIso: string, countryCode: string): Promise<LiveMatch[]> {
+  const [raw, countryIndex, surfaceIndex] = await Promise.all([
+    apiFetch<RawMatch>({ method: "get_fixtures", date_start: dateIso, date_stop: dateIso }, "no-store"),
+    getPlayerCountryIndex(),
+    getSurfaceIndex(),
+  ]);
+  return sortMatches(raw.filter((m) => hasPlayerFrom(m, countryCode, countryIndex)).map((m) => toMatch(m, countryIndex, surfaceIndex)));
 }
 
 // ─── Calendar ↔ API matching ─────────────────────────────────────────────────

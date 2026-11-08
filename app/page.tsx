@@ -15,8 +15,32 @@ import { SectionHeading } from "@/components/site/SectionHeading";
 import { EmptyState } from "@/components/site/States";
 import { TournamentCard } from "@/components/site/TournamentCard";
 import { extractYouTubeId } from "@/app/wideo/youtube";
+import { getPolishMatches, type PolishMatchesDay } from "@/lib/polish-matches";
+import { PolishMatchesWidget } from "@/components/site/PolishMatchesWidget";
 
 export const revalidate = 60;
+
+const HOME_SECTIONS = ["news", "polish", "wta", "editorial", "tournaments", "atp", "video"];
+
+/** Editor's mobile order; sections added after it was saved go next to their default neighbour. */
+function mobileOrder(saved: string[] | null | undefined): string[] {
+  const order = [...new Set((saved ?? []).filter((k) => HOME_SECTIONS.includes(k)))];
+  HOME_SECTIONS.forEach((key, i) => {
+    if (order.includes(key)) return;
+    const prev = HOME_SECTIONS.slice(0, i).reverse().find((k) => order.includes(k));
+    order.splice(prev ? order.indexOf(prev) + 1 : 0, 0, key);
+  });
+  return order;
+}
+
+async function loadPolishMatches(): Promise<PolishMatchesDay | null> {
+  try {
+    return await getPolishMatches();
+  } catch (err) {
+    (err instanceof ApiTennisError && err.code === "no-key" ? console.warn : console.error)("[home polish matches]", String(err));
+    return null;
+  }
+}
 
 async function loadRanking(tour: "ATP" | "WTA"): Promise<{ players: Player[]; error: string | null }> {
   try {
@@ -36,7 +60,7 @@ async function loadLive(): Promise<LiveMatch[]> {
 }
 
 export default async function HomePage() {
-  const [articles, tournaments, atp, wta, videos, live, settings, markedFeatured] = await Promise.all([
+  const [articles, tournaments, atp, wta, videos, live, settings, markedFeatured, polish] = await Promise.all([
     getAllArticles(12),
     getTournaments(),
     loadRanking("ATP"),
@@ -45,11 +69,11 @@ export default async function HomePage() {
     loadLive(),
     getSiteSettings(),
     getFeaturedArticle(),
+    loadPolishMatches(),
   ]);
 
   const featured = settings?.featuredArticle?.id ? settings.featuredArticle : markedFeatured ?? articles[0] ?? null;
-  const defaults = ["news", "wta", "editorial", "tournaments", "atp", "video"];
-  const order = [...new Set([...(settings?.mobileHomeOrder ?? defaults), ...defaults])];
+  const order = mobileOrder(settings?.mobileHomeOrder);
   const mobileStyle = (key: string) => ({ "--mobile-order": order.indexOf(key) } as CSSProperties);
   const editorial = await Promise.all((settings?.editorialSections ?? []).map(async (section) => ({
     ...section, articles: await getEditorialArticles(section.tag, section.category),
@@ -153,6 +177,12 @@ export default async function HomePage() {
 
           {/* ── Sidebar ─────────────────────────────────────────────────── */}
           <aside className="contents lg:block lg:space-y-8">
+            {polish && (
+              <div className="home-section" style={mobileStyle("polish")}>
+                <PolishMatchesWidget day={polish} />
+              </div>
+            )}
+
             {sideNews.length > 0 && (
               <section className="hidden lg:block" aria-labelledby="home-side-news">
                 <SectionHeading title="Więcej aktualności" href="/aktualnosci" size="md" />

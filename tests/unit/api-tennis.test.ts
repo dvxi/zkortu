@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { matchTournamentInIndex, sortMatches, toMatch, toSurface, tourFromEventType, translateRound, type RawTournament } from "@/lib/api-tennis";
+import { hasPlayerFrom, matchTournamentInIndex, sortMatches, toMatch, toSurface, tourFromEventType, translateRound, type RawTournament } from "@/lib/api-tennis";
 import { countryFromName } from "@/lib/countries";
 import { fixture } from "../helpers";
 
@@ -139,5 +139,27 @@ describe("calendar ↔ API-Tennis matching", () => {
     expect(toSurface("Indoor Hard")).toBe("Indoor Hard");
     expect(toSurface("Grass")).toBe("Grass");
     expect(toSurface(null)).toBeUndefined();
+  });
+});
+
+describe("hasPlayerFrom (homepage box with Polish players)", () => {
+  const [keyA, codeA] = [...countryIndex.entries()].find(([, c]) => c)!;
+  const [keyB] = [...countryIndex.entries()].find(([k, c]) => c === codeA && k !== keyA)!;
+  const [keyOther] = [...countryIndex.entries()].find(([, c]) => c && c !== codeA)!;
+
+  it("finds a singles match by either player's country", () => {
+    expect(hasPlayerFrom({ event_key: 1, first_player_key: "0", second_player_key: keyA }, codeA!, countryIndex)).toBe(true);
+    expect(hasPlayerFrom({ event_key: 1, first_player_key: keyOther, second_player_key: "0" }, codeA!, countryIndex)).toBe(false);
+  });
+
+  it("checks doubles partners, whose pair key is not in the rankings", () => {
+    const raw = { event_key: 2, first_player_key: "pair-1", first_player_dp1_key: keyOther, first_player_dp2_key: keyA, second_player_key: "pair-2" };
+    expect(hasPlayerFrom(raw, codeA!, countryIndex)).toBe(true);
+  });
+
+  it("gives a doubles pair a flag only when both partners share a country", () => {
+    const same = toMatch({ event_key: 3, event_type_type: "Wta Doubles", first_player_key: "pair-1", first_player_dp1_key: keyA, first_player_dp2_key: keyB, second_player_key: "pair-2", second_player_dp1_key: keyA, second_player_dp2_key: keyOther }, countryIndex);
+    expect(same.player1.countryCode).toBe(codeA);
+    expect(same.player2.countryCode).toBeNull();
   });
 });

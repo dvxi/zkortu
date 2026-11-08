@@ -39,6 +39,8 @@ Dane kontaktowe, media społecznościowe, godziny pracy, FAQ na stronie Kontakt,
 
 ## Układ strony głównej
 
-W **Ustawienia serwisu → Strona główna** można ustawić kolejność sekcji na telefonie. Domyślnie: newsy, WTA, więcej z redakcji, turnieje, ATP, wideo. Zmiana nie wpływa na układ desktopowy.
+W **Ustawienia serwisu → Strona główna** można ustawić kolejność sekcji na telefonie. Domyślnie: newsy, mecze Polek i Polaków, WTA, więcej z redakcji, turnieje, ATP, wideo. Zmiana nie wpływa na układ desktopowy.
+
+**Mecze Polek i Polaków** (na górze prawej kolumny) wypełniają się same z danych API: wszystkie dzisiejsze mecze Polaków z rankingów ATP i WTA, na każdym poziomie (ATP, WTA, Challenger, ITF), single i deble. Gdy dziś nie ma meczów, pokazuje się plan na jutro, a gdy jutro też nic, sekcja znika. Deblistów bez rankingu singlowego (np. Jan Zieliński) na razie tu nie ma.
 
 **Sekcje tematyczne** zastępują blok „Więcej z redakcji”. Dodaj nagłówek (np. „Iga Świątek”), dokładną nazwę tagu i opcjonalną kategorię. Każda sekcja pokazuje do sześciu najnowszych pasujących artykułów. Kolejność sekcji zmienisz przez przeciąganie; pusta lista przywraca „Więcej z redakcji”. Po zmianach opublikuj ustawienia.
