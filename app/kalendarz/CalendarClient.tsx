@@ -174,6 +174,9 @@ export function CalendarClient({ tournaments }: Props) {
 
   const selectedId = searchParams.get("t");
   const selectedTournament = useMemo(() => tournaments.find((t) => t.id === selectedId) ?? null, [tournaments, selectedId]);
+  // Keep the last tournament rendered while the sheet plays its close animation.
+  const [shownTournament, setShownTournament] = useState(selectedTournament);
+  if (selectedTournament && selectedTournament !== shownTournament) setShownTournament(selectedTournament);
 
   function openTournament(id: string | null) {
     const params = new URLSearchParams(searchParams.toString());
@@ -183,7 +186,7 @@ export function CalendarClient({ tournaments }: Props) {
   }
 
   const dayMatches = useDayMatches(selectedDay);
-  const tournamentMatches = useTournamentMatches(selectedTournament?.id ?? null);
+  const tournamentMatches = useTournamentMatches(shownTournament?.id ?? null);
 
   // ── Month grid ────────────────────────────────────────────────────────────
   const firstDay = new Date(calYear, calMonth, 1);
@@ -395,27 +398,27 @@ export function CalendarClient({ tournaments }: Props) {
 
       {/* Tournament sheet */}
       <Sheet open={Boolean(selectedTournament)} onOpenChange={(open) => !open && openTournament(null)}>
-        <SheetContent key={selectedId} id="tournament-panel" initialFocus={() => document.getElementById("tournament-panel")} className="w-full overflow-y-auto p-0 sm:max-w-xl">
-          {selectedTournament && (
+        <SheetContent id="tournament-panel" initialFocus={() => document.getElementById("tournament-panel")} className="w-full overflow-y-auto p-0 sm:max-w-xl">
+          {shownTournament && (
             <>
               <div className="relative h-48 w-full shrink-0 overflow-hidden">
-                {selectedTournament.imageUrl ? (
-                  <Image src={selectedTournament.imageUrl} alt={selectedTournament.name} fill sizes="640px" className="object-cover" />
+                {shownTournament.imageUrl ? (
+                  <Image src={shownTournament.imageUrl} alt={shownTournament.name} fill sizes="640px" className="object-cover" />
                 ) : (
-                  <ImagePlaceholder surface={selectedTournament.surface} label={selectedTournament.location} />
+                  <ImagePlaceholder surface={shownTournament.surface} label={shownTournament.location} />
                 )}
                 <div className="absolute inset-0 bg-gradient-to-t from-black/80 via-black/30 to-transparent" />
                 <div className="absolute left-4 top-4 flex gap-1.5">
-                  <CategoryBadge category={selectedTournament.category} />
-                  {selectedTournament.status === "live" && <LiveBadge />}
+                  <CategoryBadge category={shownTournament.category} />
+                  {shownTournament.status === "live" && <LiveBadge />}
                 </div>
                 <div className="absolute bottom-4 left-5 right-5">
                   <SheetTitle className="flex items-center gap-2 text-left text-2xl font-black text-white">
-                    <Flag flag={selectedTournament.flag} country={selectedTournament.country} />
-                    {selectedTournament.name}
+                    <Flag flag={shownTournament.flag} country={shownTournament.country} />
+                    {shownTournament.name}
                   </SheetTitle>
-                  <p className="mt-0.5 text-xs text-white/75">{selectedTournament.location}{selectedTournament.country ? `, ${selectedTournament.country}` : ""}</p>
-                  {selectedTournament.imageCredit && <p className="mt-1 text-[10px] text-white/50">{selectedTournament.imageCredit}</p>}
+                  <p className="mt-0.5 text-xs text-white/75">{shownTournament.location}{shownTournament.country ? `, ${shownTournament.country}` : ""}</p>
+                  {shownTournament.imageCredit && <p className="mt-1 text-[10px] text-white/50">{shownTournament.imageCredit}</p>}
                 </div>
               </div>
 
@@ -423,39 +426,39 @@ export function CalendarClient({ tournaments }: Props) {
                 <div className="grid grid-cols-2 gap-3">
                   <div className="rounded-xl border border-border bg-muted/40 p-3">
                     <p className="mb-1 text-[11px] text-muted-foreground">Nawierzchnia</p>
-                    <SurfaceBadge surface={selectedTournament.surface} />
+                    <SurfaceBadge surface={shownTournament.surface} />
                   </div>
                   <div className="rounded-xl border border-border bg-muted/40 p-3">
                     <p className="mb-1 text-[11px] text-muted-foreground">Kategoria</p>
-                    <CategoryBadge category={selectedTournament.category} />
+                    <CategoryBadge category={shownTournament.category} />
                   </div>
                   <div className="rounded-xl border border-border bg-muted/40 p-3">
                     <p className="mb-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground"><CalendarDays className="h-3 w-3" /> Termin</p>
-                    <p className="text-sm font-semibold text-ink">{formatDateRange(selectedTournament.startDate, selectedTournament.endDate)}</p>
+                    <p className="text-sm font-semibold text-ink">{formatDateRange(shownTournament.startDate, shownTournament.endDate)}</p>
                   </div>
                   <div className="rounded-xl border border-border bg-muted/40 p-3">
                     <p className="mb-1 inline-flex items-center gap-1 text-[11px] text-muted-foreground"><Trophy className="h-3 w-3" /> Pula nagród</p>
-                    <p className="text-sm font-semibold text-ink">{selectedTournament.prize || "—"}</p>
+                    <p className="text-sm font-semibold text-ink">{shownTournament.prize || "—"}</p>
                   </div>
                 </div>
 
-                {selectedTournament.description && <p className="text-sm leading-relaxed text-foreground/85">{selectedTournament.description}</p>}
+                {shownTournament.description && <p className="text-sm leading-relaxed text-foreground/85">{shownTournament.description}</p>}
 
-                {selectedTournament.currentChampion && (
+                {shownTournament.currentChampion && (
                   <div className="flex items-center gap-3 rounded-xl border border-border bg-card p-4">
                     <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-brand text-brand-foreground"><Trophy className="h-4 w-4" /></div>
                     <div>
                       <p className="text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">Obrońca tytułu</p>
-                      <p className="text-sm font-bold text-ink">{selectedTournament.currentChampion}</p>
+                      <p className="text-sm font-bold text-ink">{shownTournament.currentChampion}</p>
                     </div>
                   </div>
                 )}
 
-                {selectedTournament.pastWinners && selectedTournament.pastWinners.length > 0 && (
+                {shownTournament.pastWinners && shownTournament.pastWinners.length > 0 && (
                   <div>
                     <p className="mb-2 text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">Poprzedni zwycięzcy</p>
                     <ul className="divide-y divide-border rounded-xl border border-border">
-                      {selectedTournament.pastWinners.map((w) => (
+                      {shownTournament.pastWinners.map((w) => (
                         <li key={`${w.year}-${w.name}`} className="flex items-center gap-3 px-3 py-2 text-sm">
                           <span className="tabular w-12 text-xs font-bold text-muted-foreground">{w.year}</span>
                           <span className="font-medium text-ink">{w.name}</span>
@@ -467,9 +470,9 @@ export function CalendarClient({ tournaments }: Props) {
 
                 <div>
                   <p className="mb-2 flex items-center gap-2 text-[11px] font-black uppercase tracking-[0.16em] text-muted-foreground">
-                    Mecze {selectedTournament.status === "live" && <span className="live-dot" aria-hidden="true" />}
+                    Mecze {shownTournament.status === "live" && <span className="live-dot" aria-hidden="true" />}
                   </p>
-                  {selectedTournament.status === "upcoming" && !tournamentMatches.loading && tournamentMatches.matches.length === 0 ? (
+                  {shownTournament.status === "upcoming" && !tournamentMatches.loading && tournamentMatches.matches.length === 0 ? (
                     <p className="text-sm text-muted-foreground">Drabinka i mecze pojawią się po losowaniu, zwykle kilka dni przed startem.</p>
                   ) : (
                     <MatchList state={tournamentMatches} emptyText="Brak danych o meczach tego turnieju." />
@@ -477,13 +480,13 @@ export function CalendarClient({ tournaments }: Props) {
                 </div>
 
                 <div className="flex flex-wrap gap-2">
-                  {selectedTournament.liveStreamUrl && (
-                    <a href={selectedTournament.liveStreamUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-ink-foreground hover:bg-ink-muted">
+                  {shownTournament.liveStreamUrl && (
+                    <a href={shownTournament.liveStreamUrl} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl bg-ink px-4 py-2.5 text-sm font-semibold text-ink-foreground hover:bg-ink-muted">
                       <PlayCircle className="h-4 w-4" /> Oglądaj transmisję <ExternalLink className="h-3.5 w-3.5" />
                     </a>
                   )}
-                  {selectedTournament.website && (
-                    <a href={selectedTournament.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-semibold hover:bg-muted">
+                  {shownTournament.website && (
+                    <a href={shownTournament.website} target="_blank" rel="noopener noreferrer" className="inline-flex items-center gap-2 rounded-xl border border-border px-4 py-2.5 text-sm font-semibold hover:bg-muted">
                       Strona turnieju <ExternalLink className="h-3.5 w-3.5" />
                     </a>
                   )}
