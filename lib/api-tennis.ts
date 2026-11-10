@@ -201,7 +201,7 @@ async function apiFetch<T>(params: Record<string, string>, cache: CacheMode): Pr
       ? (result as RawErrorEntry[]).map((r) => r.msg).filter(Boolean).join("; ")
       : "";
     const message = msgs || "API-Tennis zwróciło błąd";
-    const code: ApiTennisErrorCode = /credential|login|key|unauthor|subscri|expired/i.test(message) ? "auth" : "http";
+    const code: ApiTennisErrorCode = /credential|login|key|unauthor|subscri|expired|payment/i.test(message) ? "auth" : "http";
     throw new ApiTennisError(message, code);
   }
 
@@ -330,6 +330,12 @@ export function translateRound(round: string | null | undefined): string {
   const qualifying = key.match(/^qualif\w*\s*(?:-\s*)?(\d)(?:st|nd|rd|th)?\s*round$/);
   if (qualifying) return `Kwalifikacje, ${qualifying[1]}. runda`;
   return last;
+}
+
+/** "Półfinał" → "Półfinał kwalifikacji"; labels that already say so stay as they are. */
+export function qualifyingRound(round: string): string {
+  if (!round) return "Kwalifikacje";
+  return /kwalifikac/i.test(round) ? round : `${round} kwalifikacji`;
 }
 
 export function tourFromEventType(eventType: string | undefined): Tour {
@@ -482,6 +488,10 @@ export function toMatch(m: RawMatch, countryIndex: Map<string, string | null>, s
   const { name: tournament, qualifying } = parseTournamentName(m.tournament_name);
   const tournamentKey = str(m.tournament_key);
   const finalResult = str(m.event_final_result);
+  // qualifying draws share the main draw's tournament key and round names ("Semi-finals");
+  // only `event_qualification` tells them apart (verified on live data, 2026-10-24)
+  const isQualifying = qualifying || /qualif/i.test(m.tournament_round ?? "") || str(m.event_qualification).toLowerCase() === "true";
+  const round = translateRound(m.tournament_round);
   return {
     id: str(m.event_key),
     tournament,
@@ -489,8 +499,8 @@ export function toMatch(m: RawMatch, countryIndex: Map<string, string | null>, s
     eventType,
     tour: tourFromEventType(eventType),
     isDoubles: /double/i.test(eventType),
-    isQualifying: qualifying || /qualif/i.test(m.tournament_round ?? ""),
-    round: translateRound(m.tournament_round),
+    isQualifying,
+    round: isQualifying ? qualifyingRound(round) : round,
     date: (m.event_date ?? "").slice(0, 10),
     time: (m.event_time ?? "").slice(0, 5),
     player1: toMatchPlayer(m.event_first_player, m.first_player_key, countryIndex, [m.first_player_dp1_key, m.first_player_dp2_key].filter((k) => str(k))),

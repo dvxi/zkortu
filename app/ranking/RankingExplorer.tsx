@@ -2,7 +2,7 @@
 
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import { ChevronLeft, ChevronRight, Info, Search, Timer } from "lucide-react";
 import type { Player } from "@/lib/types";
 import type { PlayerProfileLink } from "@/lib/sanity";
@@ -30,7 +30,6 @@ interface Props {
 }
 
 export function RankingExplorer({ data, updatedAt, profiles = {} }: Props) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const tourParam = (searchParams.get("tour") ?? "atp").toUpperCase();
   const tour: Tour = tourParam === "WTA" ? "WTA" : "ATP";
@@ -86,7 +85,8 @@ export function RankingExplorer({ data, updatedAt, profiles = {} }: Props) {
   const polesCount = players.filter((p) => p.countryCode === "PL").length;
 
   function changeTour(next: Tour) {
-    router.replace(next === "ATP" ? "/ranking" : "/ranking?tour=wta", { scroll: false });
+    // native history API: router.replace() keeps ?tour=wta when the page was opened with it
+    window.history.replaceState(null, "", next === "ATP" ? "/ranking" : "/ranking?tour=wta");
   }
 
   function changePage(next: number) {

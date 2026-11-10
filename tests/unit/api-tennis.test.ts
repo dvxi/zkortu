@@ -1,5 +1,5 @@
 import { describe, expect, it } from "vitest";
-import { hasPlayerFrom, matchTournamentInIndex, toPlayerProfile, sortMatches, toMatch, toSurface, tourFromEventType, translateRound, type RawTournament } from "@/lib/api-tennis";
+import { hasPlayerFrom, matchTournamentInIndex, qualifyingRound, toPlayerProfile, sortMatches, toMatch, toSurface, tourFromEventType, translateRound, type RawTournament } from "@/lib/api-tennis";
 import { countryFromName } from "@/lib/countries";
 import { fixture } from "../helpers";
 
@@ -65,7 +65,7 @@ describe("toMatch (verified against live API samples)", () => {
   it("detects qualifiers even when only the round carries the qualification marker", () => {
     const match = toMatch({ ...live[0], tournament_name: "ATP Vienna", tournament_round: "ATP Vienna - Qualification - Final" }, countryIndex);
     expect(match.isQualifying).toBe(true);
-    expect(match.round).toBe("Finał");
+    expect(match.round).toBe("Finał kwalifikacji");
   });
 
   it("detects tours and doubles from event types", () => {
@@ -197,5 +197,27 @@ describe("toPlayerProfile (get_players)", () => {
 
   it("treats the feed's 01.01.1970 placeholder as an unknown birth date", () => {
     expect(toPlayerProfile({ ...raw, player_bday: "01.01.1970" }).birthDate).toBeNull();
+  });
+});
+
+describe("qualifying draws (same tournament key and round names as the main draw)", () => {
+  it("uses event_qualification to label qualifying rounds", () => {
+    const q = day.find((m) => m.event_qualification === "True" && /Semi-finals$/.test(m.tournament_round ?? ""))!;
+    const m = toMatch(q, countryIndex);
+    expect(m.isQualifying).toBe(true);
+    expect(m.round).toBe("Półfinał kwalifikacji");
+  });
+
+  it("leaves main-draw rounds untouched", () => {
+    const main = day.find((m) => m.event_qualification === "False" && !/qualif/i.test(`${m.tournament_name} ${m.tournament_round}`))!;
+    const m = toMatch(main, countryIndex);
+    expect(m.isQualifying).toBe(false);
+    expect(m.round).not.toMatch(/kwalifikac/i);
+  });
+
+  it("does not double the label", () => {
+    expect(qualifyingRound("Finał")).toBe("Finał kwalifikacji");
+    expect(qualifyingRound("Kwalifikacje, 2. runda")).toBe("Kwalifikacje, 2. runda");
+    expect(qualifyingRound("")).toBe("Kwalifikacje");
   });
 });

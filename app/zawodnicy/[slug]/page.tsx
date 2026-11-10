@@ -119,7 +119,6 @@ function MatchList({ matches, profiles }: { matches: LiveMatch[]; profiles: Reco
         <li key={m.id} className="rounded-xl border border-border bg-card p-3">
           <p className="mb-1 text-[11px] font-bold uppercase tracking-wider text-muted-foreground">
             {formatDateShort(m.date)}
-            {m.isQualifying ? " · kwalifikacje" : ""}
           </p>
           <MatchRow match={m} profiles={profiles} />
         </li>

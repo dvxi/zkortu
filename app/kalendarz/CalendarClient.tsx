@@ -3,7 +3,7 @@
 import Image from "next/image";
 import Link from "next/link";
 import { useEffect, useMemo, useState } from "react";
-import { useRouter, useSearchParams } from "next/navigation";
+import { useSearchParams } from "next/navigation";
 import {
   CalendarDays,
   ChevronLeft,
@@ -131,7 +131,7 @@ function MatchList({ state, emptyText }: { state: MatchesState; emptyText: strin
   if (state.matches.length === 0) return <p className="text-sm text-muted-foreground">{emptyText}</p>;
   const byRound = new Map<string, LiveMatch[]>();
   for (const m of [...state.matches].sort((a, b) => `${b.date} ${b.time}`.localeCompare(`${a.date} ${a.time}`))) {
-    const key = `${m.date} · ${m.isQualifying ? "Kwalifikacje · " : ""}${m.round || "Mecze"}`;
+    const key = `${m.date} · ${m.round || "Mecze"}`;
     byRound.set(key, [...(byRound.get(key) ?? []), m]);
   }
   return (
@@ -160,7 +160,6 @@ interface Props {
 }
 
 export function CalendarClient({ tournaments }: Props) {
-  const router = useRouter();
   const searchParams = useSearchParams();
   const TODAY = todayIso();
   const todayDate = parseIsoDate(TODAY);
@@ -182,7 +181,9 @@ export function CalendarClient({ tournaments }: Props) {
     const params = new URLSearchParams(searchParams.toString());
     if (id) params.set("t", id);
     else params.delete("t");
-    router.replace(params.size ? `/kalendarz?${params}` : "/kalendarz", { scroll: false });
+    // Native history API (synced with useSearchParams by Next). router.replace() silently keeps
+    // the query when the page was first loaded with ?t=…, so the sheet could not be closed.
+    window.history.replaceState(null, "", params.size ? `/kalendarz?${params}` : "/kalendarz");
   }
 
   const dayMatches = useDayMatches(selectedDay);
