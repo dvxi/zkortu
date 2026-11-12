@@ -21,11 +21,14 @@ describe("tournament names", () => {
     expect(tournamentNamePl("French Open")).toBe("Roland Garros");
     expect(tournamentNamePl("Indian Wells")).toBe("Indian Wells");
     expect(tournamentNamePl("Rzym")).toBe("Rzym");
+    expect(tournamentNamePl("ATP Indian Wells")).toBe("Indian Wells");
+    expect(tournamentNamePl("WTA Rome")).toBe("Rzym");
+    expect(tournamentNamePl("ATP Finals")).toBe("ATP Finals");
   });
 
   it("keeps Grand Slams, 250-1000 and finals; drops ITF, Challenger/125 and the Olympics", () => {
     for (const ok of ["Wimbledon", "Wuhan", "Finals - Turin", "Adelaide 2", "US Open"]) expect(isMainTourTitle(ok)).toBe(true);
-    for (const no of ["Montreux (Challenger)", "W75 Montpellier (ITF)", "W60 Prague (ITF)", "M25 Poznan", "Warsaw (ITF)", "Olympic Games"]) expect(isMainTourTitle(no)).toBe(false);
+    for (const no of ["Montreux (Challenger)", "W75 Montpellier (ITF)", "W60 Prague (ITF)", "M25 Poznan", "Warsaw (ITF)", "Olympic Games", "Next Gen Finals - Milan"]) expect(isMainTourTitle(no)).toBe(false);
   });
 });
 

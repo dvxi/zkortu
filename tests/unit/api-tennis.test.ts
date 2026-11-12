@@ -195,6 +195,18 @@ describe("toPlayerProfile (get_players)", () => {
     expect(p.singlesTitles).toEqual([{ name: "Wimbledon", season: 2025, surface: "Grass" }]);
   });
 
+  it("drops junior titles (no prize money, won before 19) but keeps prize-carrying early titles", () => {
+    const p = toPlayerProfile({
+      ...raw,
+      tournaments: [
+        { name: "Wimbledon", season: "2018", type: "singles", surface: "grass", prize: "" },
+        { name: "Linz", season: "2019", type: "singles", surface: "hard", prize: "$250,000" },
+        { name: "Doha", season: "2024", type: "singles", surface: "hard", prize: "" },
+      ],
+    });
+    expect(p.singlesTitles.map((t) => `${t.season} ${t.name}`)).toEqual(["2024 Doha", "2019 Linz"]);
+  });
+
   it("treats the feed's 01.01.1970 placeholder as an unknown birth date", () => {
     expect(toPlayerProfile({ ...raw, player_bday: "01.01.1970" }).birthDate).toBeNull();
   });

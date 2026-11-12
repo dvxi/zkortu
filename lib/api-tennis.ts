@@ -674,6 +674,7 @@ interface RawPlayerTournament {
   season?: Str;
   type?: string;
   surface?: string;
+  prize?: string | null;
 }
 
 interface RawPlayer {
@@ -718,8 +719,11 @@ export function toPlayerProfile(p: RawPlayer): PlayerApiProfile {
       return acc;
     }, [])
     .sort((a, b) => b.season - a.season);
+  // junior Grand Slams come as plain "Wimbledon": no prize money, won before 19
+  const birthYear = Number((parseBirthDate(p.player_bday) ?? "").slice(0, 4)) || null;
+  const isJuniorTitle = (t: RawPlayerTournament) => birthYear !== null && int(t.season) - birthYear < 19 && !/[1-9]/.test(str(t.prize));
   const singlesTitles: PlayerTitle[] = (p.tournaments ?? [])
-    .filter((t) => t.type === "singles" && isYear(t.season) && t.name && isMainTourTitle(str(t.name)))
+    .filter((t) => t.type === "singles" && isYear(t.season) && t.name && isMainTourTitle(str(t.name)) && !isJuniorTitle(t))
     .map((t) => ({ name: str(t.name), season: int(t.season), surface: toSurface(t.surface) }))
     .sort((a, b) => b.season - a.season);
   const country = countryFromName(p.player_country);

@@ -100,7 +100,8 @@ const CITY_PATTERN = new RegExp(`\\b(${Object.keys(CITIES).sort((a, b) => b.leng
 
 /** "Rome" → "Rzym", "Finals - Turin" → "Finals - Turyn", "French Open" → "Roland Garros". */
 export function tournamentNamePl(name: string): string {
-  const trimmed = name.trim();
+  // fixtures sometimes prefix the tour ("ATP Indian Wells"); keep it for "ATP Finals"
+  const trimmed = name.trim().replace(/^(ATP|WTA)\s+(?!finals?\b)/i, "");
   const event = EVENTS[trimmed.toLowerCase()];
   if (event) return event;
   return trimmed.replace(CITY_PATTERN, (city) => CITIES[city] ?? city);
@@ -109,8 +110,8 @@ export function tournamentNamePl(name: string): string {
 /**
  * Titles that count as main-tour titles: Grand Slams, ATP/WTA 250-1000, tour finals.
  * API-Tennis marks lower levels in the name ("Montreux (Challenger)", "W60 Prague (ITF)",
- * "M25 …"); the Olympics are not an ATP/WTA title either.
+ * "M25 …"); the Olympics and the Next Gen Finals are not ATP/WTA titles either.
  */
 export function isMainTourTitle(name: string): boolean {
-  return !/\((itf|challenger)\)|^\s*[wm]\d{2,3}\b|\bitf\b|challenger|\b125\b|olympic/i.test(name);
+  return !/\((itf|challenger)\)|^\s*[wm]\d{2,3}\b|\bitf\b|challenger|\b125\b|olympic|next\s*gen/i.test(name);
 }
