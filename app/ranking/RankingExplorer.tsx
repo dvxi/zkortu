@@ -31,8 +31,8 @@ interface Props {
 
 export function RankingExplorer({ data, updatedAt, profiles = {} }: Props) {
   const searchParams = useSearchParams();
-  const tourParam = (searchParams.get("tour") ?? "atp").toUpperCase();
-  const tour: Tour = tourParam === "WTA" ? "WTA" : "ATP";
+  // WTA is the default (client request, Nov 2026); ATP via ?tour=atp
+  const tour: Tour = (searchParams.get("tour") ?? "").toLowerCase() === "atp" ? "ATP" : "WTA";
 
   const [query, setQuery] = useState("");
   const [onlyPoland, setOnlyPoland] = useState(false);
@@ -85,8 +85,8 @@ export function RankingExplorer({ data, updatedAt, profiles = {} }: Props) {
   const polesCount = players.filter((p) => p.countryCode === "PL").length;
 
   function changeTour(next: Tour) {
-    // native history API: router.replace() keeps ?tour=wta when the page was opened with it
-    window.history.replaceState(null, "", next === "ATP" ? "/ranking" : "/ranking?tour=wta");
+    // native history API: router.replace() keeps the query when the page was opened with it
+    window.history.replaceState(null, "", next === "WTA" ? "/ranking" : "/ranking?tour=atp");
   }
 
   function changePage(next: number) {
@@ -99,7 +99,7 @@ export function RankingExplorer({ data, updatedAt, profiles = {} }: Props) {
       {/* Controls */}
       <div className="mb-6 flex flex-col gap-4 lg:flex-row lg:items-center lg:justify-between">
         <div className="inline-flex rounded-xl border border-border bg-card p-1" role="tablist" aria-label="Wybór cyklu">
-          {(["ATP", "WTA"] as const).map((t) => (
+          {(["WTA", "ATP"] as const).map((t) => (
             <button
               key={t}
               role="tab"

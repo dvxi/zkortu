@@ -2,19 +2,20 @@ import type { Metadata } from "next";
 import Link from "next/link";
 import { notFound } from "next/navigation";
 import { ArrowLeft, ArrowRight, ExternalLink, Trophy } from "lucide-react";
-import { fetchPlayerMatches, fetchPlayerProfile, fetchRankings } from "@/lib/api-tennis";
+import { fetchPlayerMatches, fetchPlayerProfile, fetchRankings, mergePlayerStats } from "@/lib/api-tennis";
 import { countryFromCode } from "@/lib/countries";
 import { SITE_NAME, SITE_URL } from "@/lib/constants";
 import { formatDate, formatDateShort, formatPoints, pluralPl, slugify, todayIso } from "@/lib/format";
 import { getArticlesByTag, getPlayerBySlug, getPlayerProfileIndex, type PlayerProfileLink, type SanityPlayer } from "@/lib/sanity";
+import { getPlayerSeasonSummary } from "@/lib/player-season";
 import { imageUrl } from "@/lib/sanity-image";
-import type { LiveMatch, Player, PlayerApiProfile, PlayerSeason } from "@/lib/types";
+import { tournamentNamePl } from "@/lib/tournament-names";
+import type { LiveMatch, Player, PlayerApiProfile, PlayerSeason, PlayerTitle } from "@/lib/types";
 import { ArticleCard } from "@/components/site/ArticleCard";
 import { SurfaceBadge, TourBadge } from "@/components/site/Badges";
 import { Flag } from "@/components/site/Flag";
 import { MatchRow } from "@/components/site/MatchRow";
 import { PlayerAvatar } from "@/components/site/PlayerAvatar";
-import { MovementIcon } from "@/components/site/RankingWidget";
 import { ErrorState } from "@/components/site/States";
 
 export const revalidate = 3600;
@@ -112,6 +113,22 @@ function SeasonTable({ seasons, currentYear }: { seasons: PlayerSeason[]; curren
   );
 }
 
+const TITLES_VISIBLE = 10;
+
+function TitleList({ titles, className }: { titles: PlayerTitle[]; className?: string }) {
+  return (
+    <ul className={`divide-y divide-border ${className ?? ""}`}>
+      {titles.map((t, i) => (
+        <li key={`${t.season}-${t.name}-${i}`} className="flex items-center gap-3 px-4 py-2 text-sm">
+          <span className="tabular w-10 text-xs font-bold text-muted-foreground">{t.season}</span>
+          <span className="min-w-0 flex-1 truncate font-semibold text-ink">{tournamentNamePl(t.name)}</span>
+          {t.surface && <SurfaceBadge surface={t.surface} />}
+        </li>
+      ))}
+    </ul>
+  );
+}
+
 function MatchList({ matches, profiles }: { matches: LiveMatch[]; profiles: Record<string, PlayerProfileLink> }) {
   return (
     <ul className="space-y-2">
@@ -135,9 +152,10 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
   const today = todayIso();
   const currentYear = Number(today.slice(0, 4));
   const tag = player.tag?.trim() || player.name;
-  const [api, matches, ranking, articles, profileIndex] = await Promise.all([
+  const [api, matches, seasonSummary, ranking, articles, profileIndex] = await Promise.all([
     safe<PlayerApiProfile | null>("profile", fetchPlayerProfile(player.apiPlayerKey)),
     safe<LiveMatch[]>("matches", fetchPlayerMatches(player.apiPlayerKey, today)),
+    safe<{ season: PlayerSeason; titles: PlayerTitle[] }>("season", getPlayerSeasonSummary(player.apiPlayerKey, today)),
     safe<Player[]>("ranking", fetchRankings(player.tour)),
     getArticlesByTag(tag),
     getPlayerProfileIndex(),
@@ -148,8 +166,9 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
   const country = countryFromCode(player.countryCode);
   const countryLabel = country.namePl || (player.tour === "WTA" ? "Zawodniczka neutralna" : "Zawodnik neutralny");
   const rank = ranking?.find((p) => p.playerKey === player.apiPlayerKey) ?? null;
-  const season = api?.singles.find((s) => s.season === currentYear) ?? null;
-  const titles = api?.singlesTitles ?? [];
+  const { seasons, titles } = mergePlayerStats(api, seasonSummary, rank?.rank ?? null);
+  const season = seasons.find((s) => s.season === currentYear) ?? null;
+  const hasStats = Boolean(api || seasonSummary);
   const recent = (matches ?? []).slice(0, 12);
   const female = player.tour === "WTA";
   const age = api?.birthDate ? ageFrom(api.birthDate, today) : null;
@@ -202,7 +221,6 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
             <p className="text-[11px] font-black uppercase tracking-[0.16em] text-brand">Ranking {player.tour}</p>
             <p className="tabular mt-1 flex items-center gap-2 text-4xl font-black sm:justify-end">
               {rank ? `#${rank.rank}` : "—"}
-              {rank && <MovementIcon movement={rank.movement} className="h-5 w-5" />}
             </p>
             {rank && <p className="tabular text-xs text-white/60">{formatPoints(rank.points)} pkt</p>}
           </div>
@@ -229,10 +247,10 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
             </section>
           )}
 
-          {api && api.singles.length > 0 && (
+          {seasons.length > 0 && (
             <section aria-labelledby="player-seasons">
               <h2 id="player-seasons" className="mb-4 text-xl font-black text-ink">Statystyki w singlu</h2>
-              <SeasonTable seasons={api.singles.slice(0, 10)} currentYear={currentYear} />
+              <SeasonTable seasons={seasons.slice(0, 10)} currentYear={currentYear} />
               <p className="mt-2 text-xs text-muted-foreground">Ranking: pozycja na koniec sezonu, w bieżącym sezonie aktualna.</p>
             </section>
           )}
@@ -249,7 +267,7 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
               {player.height && <Fact label="Wzrost">{player.height} cm</Fact>}
               {playStyle(player) && <Fact label="Gra">{playStyle(player)}</Fact>}
               {player.coach && <Fact label="Trener">{player.coach}</Fact>}
-              {api && <Fact label="Tytuły w singlu">{titles.length}</Fact>}
+              {hasStats && <Fact label="Tytuły w singlu">{titles.length}</Fact>}
             </dl>
             {links.length > 0 && (
               <div className="flex flex-wrap gap-2 border-t border-border p-4">
@@ -267,16 +285,16 @@ export default async function PlayerPage({ params }: { params: Promise<{ slug: s
               <h2 id="player-titles" className="flex items-center gap-2 border-b border-border px-4 py-3 text-sm font-black uppercase tracking-wider text-ink">
                 <Trophy className="h-4 w-4 text-brand" /> Tytuły ({titles.length})
               </h2>
-              <ul className="divide-y divide-border">
-                {titles.slice(0, 12).map((t, i) => (
-                  <li key={`${t.season}-${t.name}-${i}`} className="flex items-center gap-3 px-4 py-2 text-sm">
-                    <span className="tabular w-10 text-xs font-bold text-muted-foreground">{t.season}</span>
-                    <span className="min-w-0 flex-1 truncate font-semibold text-ink">{t.name}</span>
-                    {t.surface && <SurfaceBadge surface={t.surface} />}
-                  </li>
-                ))}
-              </ul>
-              {titles.length > 12 && <p className="border-t border-border px-4 py-2 text-xs text-muted-foreground">i {titles.length - 12} wcześniejszych</p>}
+              <TitleList titles={titles.slice(0, TITLES_VISIBLE)} />
+              {titles.length > TITLES_VISIBLE && (
+                <details className="group border-t border-border">
+                  <summary className="cursor-pointer list-none px-4 py-2.5 text-xs font-semibold text-brand-strong hover:opacity-70 [&::-webkit-details-marker]:hidden">
+                    <span className="group-open:hidden">Pokaż wszystkie ({titles.length})</span>
+                    <span className="hidden group-open:inline">Zwiń</span>
+                  </summary>
+                  <TitleList titles={titles.slice(TITLES_VISIBLE)} className="border-t border-border" />
+                </details>
+              )}
             </section>
           )}
         </aside>

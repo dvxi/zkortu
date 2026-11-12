@@ -30,6 +30,7 @@ import type {
   Tournament,
 } from "./types";
 import { countryFromName, normalizeName } from "./countries";
+import { isMainTourTitle, tournamentNamePl } from "./tournament-names";
 import { addDaysIso } from "./format";
 
 const BASE_URL = "https://api.api-tennis.com/tennis/";
@@ -494,7 +495,7 @@ export function toMatch(m: RawMatch, countryIndex: Map<string, string | null>, s
   const round = translateRound(m.tournament_round);
   return {
     id: str(m.event_key),
-    tournament,
+    tournament: tournamentNamePl(tournament),
     tournamentKey,
     eventType,
     tour: tourFromEventType(eventType),
@@ -718,7 +719,7 @@ export function toPlayerProfile(p: RawPlayer): PlayerApiProfile {
     }, [])
     .sort((a, b) => b.season - a.season);
   const singlesTitles: PlayerTitle[] = (p.tournaments ?? [])
-    .filter((t) => t.type === "singles" && isYear(t.season) && t.name)
+    .filter((t) => t.type === "singles" && isYear(t.season) && t.name && isMainTourTitle(str(t.name)))
     .map((t) => ({ name: str(t.name), season: int(t.season), surface: toSurface(t.surface) }))
     .sort((a, b) => b.season - a.season);
   const country = countryFromName(p.player_country);
@@ -737,6 +738,74 @@ export function toPlayerProfile(p: RawPlayer): PlayerApiProfile {
 export async function fetchPlayerProfile(playerKey: string): Promise<PlayerApiProfile | null> {
   const raw = await apiFetch<RawPlayer>({ method: "get_players", player_key: playerKey }, { revalidate: 43200, tags: ["player-profiles", `player:${playerKey}`] });
   return raw[0] ? toPlayerProfile(raw[0]) : null;
+}
+
+const surfaceBucket = (s: Surface | undefined): "hard" | "clay" | "grass" | null =>
+  !s ? null : /clay/i.test(s) ? "clay" : /grass/i.test(s) ? "grass" : "hard";
+
+/**
+ * Season record and titles computed from the player's own matches. get_players lags
+ * behind: titles of the season in progress are missing and some players have no
+ * current-season row at all. Counts main-draw ATP/WTA singles only (no qualifying,
+ * Challenger, ITF or team events); walkovers are not counted as played matches but a
+ * final won by walkover is still a title.
+ */
+export function summarizeSeason(matches: LiveMatch[], playerKey: string, season: number): { season: PlayerSeason; titles: PlayerTitle[] } {
+  const year = String(season);
+  const singles = matches.filter(
+    (m) => !m.isDoubles && isMainTour(m) && !m.isQualifying && m.status === "finished" && m.winner && m.date.startsWith(year) && (m.player1.key === playerKey || m.player2.key === playerKey),
+  );
+  const row: PlayerSeason = { season, rank: null, titles: 0, won: 0, lost: 0, hard: [0, 0], clay: [0, 0], grass: [0, 0] };
+  const titles: PlayerTitle[] = [];
+  for (const m of singles) {
+    const won = m.winner === (m.player1.key === playerKey ? 1 : 2);
+    if (won && m.round === "Finał") titles.push({ name: m.tournament, season, surface: m.surface });
+    if (m.statusLabel === "Walkower") continue;
+    if (won) row.won++;
+    else row.lost++;
+    const bucket = surfaceBucket(m.surface);
+    if (bucket) row[bucket][won ? 0 : 1]++;
+  }
+  row.titles = titles.length;
+  return { season: row, titles };
+}
+
+/**
+ * Season table and title list for a profile: get_players data, plus the current season
+ * computed from matches (row added when the API has none, titles the API has not listed
+ * yet). Per-season title counts are recomputed from the main-tour title list so the
+ * table and the title box always agree.
+ */
+export function mergePlayerStats(
+  api: PlayerApiProfile | null,
+  current: { season: PlayerSeason; titles: PlayerTitle[] } | null,
+  currentRank: number | null,
+): { seasons: PlayerSeason[]; titles: PlayerTitle[] } {
+  const apiTitles = api?.singlesTitles ?? [];
+  const same = (a: string, b: string) => {
+    const x = normalizeName(tournamentNamePl(a));
+    const y = normalizeName(tournamentNamePl(b));
+    return x === y || x.includes(y) || y.includes(x);
+  };
+  const missing = (current?.titles ?? []).filter((t) => !apiTitles.some((a) => a.season === t.season && same(a.name, t.name)));
+  const titles = [...missing, ...apiTitles].sort((a, b) => b.season - a.season);
+
+  const seasons = [...(api?.singles ?? [])];
+  if (current) {
+    const i = seasons.findIndex((s) => s.season === current.season.season);
+    const played = current.season.won + current.season.lost > 0 || current.titles.length > 0;
+    if (i === -1 && played) seasons.push({ ...current.season, rank: currentRank });
+    else if (i !== -1 && currentRank && !seasons[i].rank) seasons[i] = { ...seasons[i], rank: currentRank };
+  }
+  return {
+    seasons: seasons.map((s) => ({ ...s, titles: titles.filter((t) => t.season === s.season).length })).sort((a, b) => b.season - a.season),
+    titles,
+  };
+}
+
+/** All of the player's matches this season (Jan 1 → today), uncached: the response can exceed 2 MB. */
+export async function fetchPlayerSeasonMatches(playerKey: string, today: string): Promise<LiveMatch[]> {
+  return fetchFixtures({ dateStart: `${today.slice(0, 4)}-01-01`, dateStop: today, playerKey }, "all", "no-store");
 }
 
 /** The player's matches from the last 60 days and the next 7 (newest first), cached 1 h. */

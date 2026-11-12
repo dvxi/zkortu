@@ -398,7 +398,7 @@ export function LiveScoresClient({ initial = null, requestedMatchId }: { initial
 
           {/* Desktop detail */}
           <div className="hidden lg:col-span-3 lg:block">
-            <div className="sticky top-24 max-h-[calc(100dvh-7rem)] overflow-y-auto overscroll-contain rounded-2xl">
+            <div className="live-detail sticky top-24 overflow-y-auto overscroll-contain rounded-2xl">
               {selected && <div key={selected.id} className="anim-switch"><MatchDetail match={selected} /></div>}
             </div>
           </div>
@@ -407,9 +407,10 @@ export function LiveScoresClient({ initial = null, requestedMatchId }: { initial
 
       {/* Mobile detail sheet */}
       <Sheet open={sheetOpen} onOpenChange={setSheetOpen}>
-        <SheetContent side="bottom" className="max-h-[88dvh] overflow-y-auto rounded-t-2xl p-4 lg:hidden">
+        <SheetContent side="bottom" className="live-sheet overflow-y-auto overscroll-contain rounded-t-2xl p-4 lg:hidden">
           <SheetTitle className="sr-only">Szczegóły meczu</SheetTitle>
-          {selected && <MatchDetail match={selected} />}
+          {/* shrink-0: as a flex item with overflow-hidden the card was squeezed to the sheet height and clipped */}
+          {selected && <div className="shrink-0"><MatchDetail match={selected} /></div>}
         </SheetContent>
       </Sheet>
     </div>

@@ -92,7 +92,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
           <div className="min-w-0">
             <header>
               <span className="mb-4 inline-block rounded-md bg-brand px-2.5 py-1 text-[11px] font-black uppercase tracking-wider text-brand-foreground">{article.category}</span>
-              <h1 className="text-balance text-3xl font-black leading-[1.1] tracking-[-0.02em] text-ink sm:text-4xl lg:text-[2.75rem]">{article.title}</h1>
+              <h1 className="text-pretty text-3xl font-black leading-[1.1] tracking-[-0.02em] text-ink sm:text-4xl lg:text-[2.75rem]">{article.title}</h1>
 
               <div className="mt-5 flex flex-wrap items-center gap-x-5 gap-y-2 border-b border-border pb-5 text-sm text-muted-foreground">
                 <span className="inline-flex items-center gap-1.5 font-semibold text-ink">
@@ -123,7 +123,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
             </header>
 
             {/* Lead */}
-            <p className="mt-6 max-w-[70ch] text-pretty text-lg font-medium leading-relaxed text-ink sm:text-xl">{article.excerpt}</p>
+            <p className="mt-6 text-pretty text-lg font-medium leading-relaxed text-ink sm:text-xl">{article.excerpt}</p>
 
             {/* Hero image with caption overlay */}
             <figure className="mt-7">
@@ -140,7 +140,7 @@ export default async function ArticlePage({ params }: { params: Promise<{ id: st
             </figure>
 
             {/* Body */}
-            <div className="prose-article mt-8 max-w-[70ch]">
+            <div className="prose-article mt-8">
               <PortableText value={article.content} components={articleComponents} />
             </div>
 

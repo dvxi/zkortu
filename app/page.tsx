@@ -104,10 +104,13 @@ export default async function HomePage() {
               )}
               {/* side news on small screens */}
               {sideNews.length > 0 && (
-                <div className="mt-4 grid grid-cols-1 gap-1 sm:grid-cols-2 lg:hidden">
-                  {sideNews.map((a) => (
-                    <ArticleCard key={a._id} article={a} variant="row" home />
-                  ))}
+                <div className="mt-6 lg:hidden">
+                  <SectionHeading title="Więcej aktualności" href="/aktualnosci" size="md" className="mb-2" />
+                  <div className="grid grid-cols-1 gap-1 sm:grid-cols-2">
+                    {sideNews.map((a) => (
+                      <ArticleCard key={a._id} article={a} variant="row" home />
+                    ))}
+                  </div>
                 </div>
               )}
             </section>
@@ -177,13 +180,8 @@ export default async function HomePage() {
           </div>
 
           {/* ── Sidebar ─────────────────────────────────────────────────── */}
+          {/* desktop order: more news → Polish matches → WTA → ATP → live; mobile order comes from --mobile-order */}
           <aside className="contents lg:block lg:space-y-8">
-            {polish && (
-              <div className="home-section" style={mobileStyle("polish")}>
-                <PolishMatchesWidget day={polish} profiles={profiles} />
-              </div>
-            )}
-
             {sideNews.length > 0 && (
               <section className="hidden lg:block" aria-labelledby="home-side-news">
                 <SectionHeading title="Więcej aktualności" href="/aktualnosci" size="md" />
@@ -195,8 +193,14 @@ export default async function HomePage() {
               </section>
             )}
 
-            <div className="home-section" style={mobileStyle("atp")}><RankingWidget tour="ATP" players={atp.players} error={atp.error} profiles={profiles} /></div>
+            {polish && (
+              <div className="home-section" style={mobileStyle("polish")}>
+                <PolishMatchesWidget day={polish} profiles={profiles} />
+              </div>
+            )}
+
             <div className="home-section" style={mobileStyle("wta")}><RankingWidget tour="WTA" players={wta.players} error={wta.error} profiles={profiles} /></div>
+            <div className="home-section" style={mobileStyle("atp")}><RankingWidget tour="ATP" players={atp.players} error={atp.error} profiles={profiles} /></div>
 
             <Link href="/wyniki-live" className="order-last group flex items-center justify-between rounded-2xl bg-ink p-5 text-ink-foreground transition-colors hover:bg-ink-muted">
               <div>

@@ -9,8 +9,8 @@ const columns = [
     title: "Tenis",
     links: [
       { href: "/wyniki-live", label: "Wyniki na żywo" },
-      { href: "/ranking", label: "Ranking ATP" },
-      { href: "/ranking?tour=wta", label: "Ranking WTA" },
+      { href: "/ranking", label: "Ranking WTA" },
+      { href: "/ranking?tour=atp", label: "Ranking ATP" },
       { href: "/zawodnicy", label: "Zawodnicy" },
       { href: "/kalendarz", label: "Kalendarz turniejów" },
     ],

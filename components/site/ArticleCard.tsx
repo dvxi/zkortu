@@ -40,14 +40,14 @@ export function ArticleCard({ article, variant = "card", priority, className, ho
 
   if (variant === "row") {
     return (
-      <Link href={href} className={cn("group flex gap-3 rounded-xl p-2 transition-colors hover:bg-muted", className)}>
-        <div className="relative aspect-video w-28 shrink-0 self-start overflow-hidden rounded-lg sm:w-32">
+      <Link href={href} className={cn("group flex items-center gap-3 rounded-xl p-2 transition-colors hover:bg-muted", className)}>
+        <div className="relative aspect-video w-28 shrink-0 overflow-hidden rounded-lg sm:w-32">
           <div className="relative aspect-video">
             <CoverImage image={article.mainImage} alt={alt} width={320} sizes="128px" className="object-cover transition-transform duration-500 group-hover:scale-105" placeholderLabel={article.category} />
           </div>
         </div>
         <div className="min-w-0 flex-1">
-          <span className="text-[10px] font-black uppercase tracking-[0.16em] text-brand-strong">{article.category}</span>
+          <span className="block text-[10px] font-black uppercase leading-tight tracking-[0.16em] text-brand-strong">{article.category}</span>
           <p className="mt-0.5 line-clamp-2 text-sm font-bold leading-snug text-ink transition-opacity group-hover:opacity-70">{title}</p>
           <span className="mt-1 block text-xs text-muted-foreground">
             <PublicationTime date={article.date} publishedAt={article.publishedAt} />

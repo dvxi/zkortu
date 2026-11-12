@@ -273,3 +273,7 @@
   .home-section { order: var(--mobile-order, 0); }
   body:has(.mobile-bottom-nav) { padding-bottom: calc(4rem + env(safe-area-inset-bottom)); }
 }
+
+/* Live scores match detail: vh first for browsers without dynamic viewport units */
+.live-detail { max-height: calc(100vh - 7rem); max-height: calc(100dvh - 7rem); }
+.live-sheet { max-height: 88vh; max-height: 88dvh; }
